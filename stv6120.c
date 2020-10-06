@@ -188,19 +188,6 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
         if(err == ERROR_TUNER_LOCK_TIMEOUT)
         {
             printf("Flow: Attempting PLL again, %"PRIu32" attempts remaining\n", lock_attempts);
-
-            if(lock_attempts == 1)
-            {
-                printf("Flow: Last attempt, so decrementing frequency by 1KHz to kick PLL\n");
-
-                freq = freq - 1;
-                stv6120_calc_pll(freq, &p, &f_vco, &n, &f, &icp, &cfhf);
-
-                printf("      Status: tuner:%i, f_vco=0x%x, icp=0x%x, f=0x%x, n=0x%x,\n",tuner,f_vco,icp,f,n);
-                printf("              rdiv=0x%x, p=0x%x, freq=%i, cfhf=%i\n",rdiv,p,freq,stv6120_cfhf[cfhf]);
-            }
-
-            /* Reset error */
             err=ERROR_NONE;
         }
 
