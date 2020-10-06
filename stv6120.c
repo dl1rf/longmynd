@@ -182,10 +182,10 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
     printf("              rdiv=0x%x, p=0x%x, freq=%i, cfhf=%i\n",rdiv,p,freq,stv6120_cfhf[cfhf]);
 
     lock_attempts = 3;
-    while(lock_attempts == 3 || (err == ERROR_TUNER_LOCK_TIMEOUT && lock_attempts > 0))
+    while(lock_attempts == 3 || (err != ERROR_NONE && lock_attempts > 0))
     {
         /* If we're resetting err here then it's because we're trying again */
-        if(err == ERROR_TUNER_LOCK_TIMEOUT)
+        if(err!=ERROR_NONE)
         {
             printf("Flow: Attempting PLL again, %"PRIu32" attempts remaining\n", lock_attempts);
             err=ERROR_NONE;
