@@ -120,6 +120,8 @@ void stv6120_calc_pll(uint32_t freq, uint8_t *p, uint32_t *f_vco, uint16_t *n, u
 /* -------------------------------------------------------------------------------------------------- */
     uint8_t pos;
 
+    printf("Flow: Tuner set freq\n");
+
     /* the global rdiv has already been set up in the init routines */
 
     /* p is defined from the datasheet (note, this is reg value, not P) */
@@ -171,7 +173,6 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
     uint8_t icp;
     uint32_t f_vco;
     uint64_t timeout;
-    uint32_t lock_attempts;
     uint8_t cfhf;
 
     printf("Flow: Tuner set freq\n");
@@ -181,90 +182,78 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
     printf("      Status: tuner:%i, f_vco=0x%x, icp=0x%x, f=0x%x, n=0x%x,\n",tuner,f_vco,icp,f,n);
     printf("              rdiv=0x%x, p=0x%x, freq=%i, cfhf=%i\n",rdiv,p,freq,stv6120_cfhf[cfhf]);
 
-    lock_attempts = 3;
-    while(lock_attempts == 3 || (err != ERROR_NONE && lock_attempts > 0))
-    {
-        /* If we're resetting err here then it's because we're trying again */
-        if(err!=ERROR_NONE)
-        {
-            printf("Flow: Attempting PLL again, %"PRIu32" attempts remaining\n", lock_attempts);
-            err=ERROR_NONE;
-        }
+    /* now we fill in the PLL and ICP values */
+    if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL3 : STV6120_CTRL12,
+                                            (n & 0x00ff)               );      /* set N[7:0] */
+    if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL4 : STV6120_CTRL13,
+                                            ((f & 0x0000007f) << 1)    |       /* set F[6:0] */
+                                            ((n & 0x0100)   >> 8)      );      /* N[8] */
+    if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL5 : STV6120_CTRL14,
+                                            ((f & 0x00007f80) >> 7)    );      /* set F[14:7] */
+    if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL6 : STV6120_CTRL15,
+                                            ((f & 0x00038000) >> 15)   |       /* set f[17:15] */
+                                            (icp << STV6120_CTRL6_ICP_SHIFT) | /* ICP[2:0] */
+                                            STV6120_CTRL6_RESERVED     );      /* reserved bit */
 
-        /* now we fill in the PLL and ICP values */
-        if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL3 : STV6120_CTRL12,
-                                                (n & 0x00ff)               );      /* set N[7:0] */
-        if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL4 : STV6120_CTRL13,
-                                                ((f & 0x0000007f) << 1)    |       /* set F[6:0] */
-                                                ((n & 0x0100)   >> 8)      );      /* N[8] */
-        if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL5 : STV6120_CTRL14,
-                                                ((f & 0x00007f80) >> 7)    );      /* set F[14:7] */
-        if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_CTRL6 : STV6120_CTRL15,
-                                                ((f & 0x00038000) >> 15)   |       /* set f[17:15] */
-                                                (icp << STV6120_CTRL6_ICP_SHIFT) | /* ICP[2:0] */
-                                                STV6120_CTRL6_RESERVED     );      /* reserved bit */
+    if (tuner==TUNER_1) {
+        if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL7,
+                                                 (p<<STV6120_CTRL7_PDIV_SHIFT) |
+                                                 ctrl7                         ); /* put back in RCCLKOFF_1 as well */
 
-        if (tuner==TUNER_1) {
-            if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL7,
-                                                     (p<<STV6120_CTRL7_PDIV_SHIFT) |
-                                                     ctrl7                         ); /* put back in RCCLKOFF_1 as well */
-
-            if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL8,
-                                                     (cfhf << STV6120_CTRL8_CFHF_SHIFT) |
-                                                     ctrl8                              );
-        } else { /* tuner=TUNER_2 */ 
-            if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL16,
-                                                     (p<<STV6120_CTRL7_PDIV_SHIFT) |
-                                                     ctrl16                        ); /* put back in RCCLKOFF_2 as well */
-            if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL17,
-                                                     (cfhf << STV6120_CTRL8_CFHF_SHIFT) |
-                                                     ctrl17                             );
-        }
-
-        /* if we change the filter re-cal it, and if we change VCO we have to re-cal it, so here goes */
-        if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2,
-                                                (STV6120_STAT1_CALVCOSTRT_START << STV6120_STAT1_CALVCOSTRT_SHIFT) | /* start CALVCOSTRT */
-                                                STV6120_STAT1_RESERVED                                             );
-
-        /* wait for CALVCOSTRT bit to go low to say VCO cal is finished */
-        if (err==ERROR_NONE) {
-            timeout=monotonic_ms()+STV6120_CAL_TIMEOUT_MS;
-            do {
-                err=stv6120_read_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2, &val);
-            } while ((err==ERROR_NONE) &&
-                     (monotonic_ms()<timeout) &&
-                     ((val & (1<<STV6120_STAT1_CALVCOSTRT_SHIFT))!=(STV6120_STAT1_CALVCOSTRT_FINISHED << STV6120_STAT1_CALVCOSTRT_SHIFT)));
-            if ((err==ERROR_NONE) && (monotonic_ms()>=timeout)) {
-                printf("ERROR: tuner wait on CAL timed out\n");
-                err=ERROR_TUNER_CAL_TIMEOUT;
-            }
-            else
-            {
-                printf("Debug: VCO Cal took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_CAL_TIMEOUT_MS)));
-            }
-        }
-
-        /* wait for LOCK bit to go high to say PLL is locked */
-        if (err==ERROR_NONE) {
-            timeout=monotonic_ms()+STV6120_PLL_TIMEOUT_MS;
-            do {
-                err=stv6120_read_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2, &val);
-            } while ((err==ERROR_NONE) &&
-                     (monotonic_ms()<timeout) &&
-                     ((val & (1<<STV6120_STAT1_LOCK_SHIFT)) != (STV6120_STAT1_LOCK_LOCKED << STV6120_STAT1_LOCK_SHIFT)));
-            if ((err==ERROR_NONE) && (monotonic_ms()>=timeout)) {
-                printf("ERROR: tuner wait on lock timed out\n");
-                err=ERROR_TUNER_LOCK_TIMEOUT;
-            }
-            else
-            {
-                printf("Debug: PLL Lock took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_PLL_TIMEOUT_MS)));
-            }
-        }
-        lock_attempts--;
+        if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL8,
+                                                 (cfhf << STV6120_CTRL8_CFHF_SHIFT) |
+                                                 ctrl8                              );
+    } else { /* tuner=TUNER_2 */ 
+        if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL16,
+                                                 (p<<STV6120_CTRL7_PDIV_SHIFT) |
+                                                 ctrl16                        ); /* put back in RCCLKOFF_2 as well */
+        if (err==ERROR_NONE) err=stv6120_write_reg(STV6120_CTRL17,
+                                                 (cfhf << STV6120_CTRL8_CFHF_SHIFT) |
+                                                 ctrl17                             );
     }
 
-    if (err!=ERROR_NONE) printf("ERROR: Tuner set freq %i failed\n",freq);
+    /* if we change the filter re-cal it, and if we change VCO we have to re-cal it, so here goes */
+    if (err==ERROR_NONE) err=stv6120_write_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2,
+                                            (STV6120_STAT1_CALVCOSTRT_START << STV6120_STAT1_CALVCOSTRT_SHIFT) | /* start CALVCOSTRT */
+                                            STV6120_STAT1_RESERVED                                             );
+
+    /* wait for CALVCOSTRT bit to go low to say VCO cal is finished */
+    if (err==ERROR_NONE) {
+        timeout=monotonic_ms()+STV6120_CAL_TIMEOUT_MS;
+        do {
+            err=stv6120_read_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2, &val);
+        } while ((err==ERROR_NONE) &&
+                 (monotonic_ms()<timeout) &&
+                 ((val & (1<<STV6120_STAT1_CALVCOSTRT_SHIFT))!=(STV6120_STAT1_CALVCOSTRT_FINISHED << STV6120_STAT1_CALVCOSTRT_SHIFT)));
+        if ((err==ERROR_NONE) && (monotonic_ms()>=timeout)) {
+            printf("ERROR: tuner wait on CAL timed out\n");
+            err=ERROR_TUNER_CAL_TIMEOUT;
+        }
+        else
+        {
+            printf("Debug: VCO Cal took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_CAL_TIMEOUT_MS)));
+        }
+    }
+
+    /* wait for LOCK bit to go high to say PLL is locked */
+    if (err==ERROR_NONE) {
+        timeout=monotonic_ms()+STV6120_PLL_TIMEOUT_MS;
+        do {
+            err=stv6120_read_reg(tuner==TUNER_1 ? STV6120_STAT1 : STV6120_STAT2, &val);
+        } while ((err==ERROR_NONE) &&
+                 (monotonic_ms()<timeout) &&
+                 ((val & (1<<STV6120_STAT1_LOCK_SHIFT)) != (STV6120_STAT1_LOCK_LOCKED << STV6120_STAT1_LOCK_SHIFT)));
+        if ((err==ERROR_NONE) && (monotonic_ms()>=timeout)) {
+            printf("ERROR: tuner wait on lock timed out\n");
+            err=ERROR_TUNER_LOCK_TIMEOUT;
+        }
+        else
+        {
+            printf("Debug: PLL Lock took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_PLL_TIMEOUT_MS)));
+        }
+    }
+
+    if (err!=ERROR_NONE) printf("ERROR: Tuner set freq %i\n",freq);
 
     return err;
 }
