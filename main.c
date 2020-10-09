@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
+#include <signal.h>
 #include "main.h"
 #include "ftdi.h"
 #include "stv0910.h"
@@ -842,15 +843,32 @@ uint8_t status_all_write(longmynd_status_t *status, uint8_t (*status_write)(uint
 }
 
 /* -------------------------------------------------------------------------------------------------- */
+static uint8_t *sigterm_handler_err_ptr;
+void sigterm_handler(int sig) {
+/* -------------------------------------------------------------------------------------------------- */
+/*    Runs on SIGTERM or SIGINT (Ctrl+C).                                                             */
+/*    Sets main error variable to cause all threads to cleanly exit                                   */
+/* -------------------------------------------------------------------------------------------------- */
+    (void)sig;
+    /* There are some internally handled errors, so we blindly set here to ensure we exit */
+    *sigterm_handler_err_ptr = ERROR_SIGNAL_TERMINATE;
+}
+
+
+/* -------------------------------------------------------------------------------------------------- */
 int main(int argc, char *argv[]) {
 /* -------------------------------------------------------------------------------------------------- */
 /*    command line processing                                                                         */
 /*    module initialisation                                                                           */
 /*    Print out of status information to requested interface, triggered by pthread condition variable */
 /* -------------------------------------------------------------------------------------------------- */
-    uint8_t err;
+    uint8_t err = ERROR_NONE;
     uint8_t (*status_write)(uint8_t,uint32_t);
     uint8_t (*status_string_write)(uint8_t,char*);
+
+    sigterm_handler_err_ptr = &err;
+    signal(SIGTERM, sigterm_handler);
+    signal(SIGINT, sigterm_handler);
 
     printf("Flow: main\n");
 
@@ -983,11 +1001,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /* Exited, wait for child threads to exit */
+    printf("Flow: Main loop aborted, waiting for threads.\n");
+
     pthread_join(thread_ts_parse, NULL);
     pthread_join(thread_ts, NULL);
     pthread_join(thread_i2c, NULL);
     pthread_join(thread_beep, NULL);
+
+    printf("Flow: All threads accounted for. Exiting cleanly.\n");
 
     return err;
 }
