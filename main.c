@@ -589,7 +589,7 @@ void *loop_i2c(void *arg) {
             status_cpy.symbolrate_requested = config_cpy.sr_requested[config_cpy.sr_index];
 
             uint8_t tuner_err = ERROR_NONE; // Seperate to avoid triggering main() abort on handled tuner error.
-            int32_t tuner_lock_attempts = 3;
+            int32_t tuner_lock_attempts = STV6120_PLL_ATTEMPTS;
             do
             {
                 /* init all the modules */
