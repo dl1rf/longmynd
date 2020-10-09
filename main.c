@@ -605,7 +605,8 @@ void *loop_i2c(void *arg) {
                     printf("Flow: Caught tuner lock timeout, %"PRIu32" attempts at stv6120_init() remaining.\n", tuner_lock_attempts);
                     usleep(100*1000);
                 }
-            } while (*err==ERROR_NONE
+            } while (*thread_vars->main_err_ptr==ERROR_NONE
+                    && *err==ERROR_NONE
                     && tuner_err==ERROR_TUNER_LOCK_TIMEOUT
                     && tuner_lock_attempts-- > 0);
 
