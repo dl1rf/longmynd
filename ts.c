@@ -162,7 +162,7 @@ static uint32_t crc32_mpeg2(uint8_t *data_ptr, size_t length)
 
 static inline void timespec_add_ns(struct timespec *ts, int32_t ns)
 {
-    if((ts->tv_nsec + ns) > 1e9)
+    if((ts->tv_nsec + ns) >= 1e9)
     {
         ts->tv_sec = ts->tv_sec + 1;
         ts->tv_nsec = (ts->tv_nsec + ns) - 1e9;
