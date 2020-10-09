@@ -588,37 +588,30 @@ void *loop_i2c(void *arg) {
             status_cpy.frequency_requested = config_cpy.freq_requested[config_cpy.freq_index];
             status_cpy.symbolrate_requested = config_cpy.sr_requested[config_cpy.sr_index];
 
-	    int32_t tuner_lock_attempts = 5;
-	    while (tuner_lock_attempts-- > 0)
-	    {
-
+            uint8_t tuner_err = ERROR_NONE; // Seperate to avoid triggering main() abort on handled tuner error.
+            int32_t tuner_lock_attempts = 3;
+            do
+            {
                 /* init all the modules */
                 if (*err==ERROR_NONE) *err=nim_init();
                 /* we are only using the one demodulator so set the other to 0 to turn it off */
                 if (*err==ERROR_NONE) *err=stv0910_init(config_cpy.sr_requested[config_cpy.sr_index],0);
                 /* we only use one of the tuners in STV6120 so freq for tuner 2=0 to turn it off */
-                if (*err==ERROR_NONE) *err=stv6120_init(config_cpy.freq_requested[config_cpy.freq_index],0,config_cpy.port_swap);
-                if (*err==ERROR_TUNER_LOCK_TIMEOUT)
+                if (*err==ERROR_NONE) tuner_err=stv6120_init(config_cpy.freq_requested[config_cpy.freq_index],0,config_cpy.port_swap);
+                
+                /* Tuner Lock timeout on some NIMs - Print message and pause, do..while() handles the retry logic */
+                if (*err==ERROR_NONE && tuner_err==ERROR_TUNER_LOCK_TIMEOUT)
                 {
-                    /* Catch Tuner Lock timeout on some NIMs */
-                    if(tuner_lock_attempts > 0)
-                    {
-                        printf("Flow: Caught tuner lock timeout, restarting init, %"PRIu32" attempts remaining.\n", tuner_lock_attempts);
-                        usleep(100*1000);
-                        *err = ERROR_NONE;
-                    }
-                    else
-                    {
-                        printf("Flow: Caught tuner lock timeout, no attempts remaining, aborting.\n");
-                    }
-		    continue;
+                    printf("Flow: Caught tuner lock timeout, %"PRIu32" attempts at stv6120_init() remaining.\n", tuner_lock_attempts);
+                    usleep(100*1000);
                 }
-                else
-                {
-                    /* Otherwise, continue as normal, error or not */
-                    break;
-                }
-	    }
+            } while (*err==ERROR_NONE
+                    && tuner_err==ERROR_TUNER_LOCK_TIMEOUT
+                    && tuner_lock_attempts-- > 0);
+
+            /* Propagate up tuner error from stv6120_init() */
+            if (*err==ERROR_NONE) *err = tuner_err;
+
             /* we turn on the LNA we want and turn the other off (if they exist) */
             if (*err==ERROR_NONE) *err=stvvglna_init(NIM_INPUT_TOP,    (config_cpy.port_swap) ? STVVGLNA_OFF : STVVGLNA_ON,  &status_cpy.lna_ok);
             if (*err==ERROR_NONE) *err=stvvglna_init(NIM_INPUT_BOTTOM, (config_cpy.port_swap) ? STVVGLNA_ON  : STVVGLNA_OFF, &status_cpy.lna_ok);
