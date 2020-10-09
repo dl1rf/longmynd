@@ -101,7 +101,6 @@ uint8_t stv6120_cal_lowpass(uint8_t tuner) {
                 printf("ERROR: tuner wait on CAL_lowpass timed out\n");
             }
         } while ((err==ERROR_NONE) && ((val & (1<<STV6120_STAT1_CALRCSTRT_SHIFT)) == (1<<STV6120_STAT1_CALRCSTRT_SHIFT)));
-        printf("Debug: LPF Cal took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_LPFCAL_TIMEOUT_MS)));
     }
 
     /* turn off the low pass filter clock (=1) */
@@ -229,10 +228,6 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
             printf("ERROR: tuner wait on CAL timed out\n");
             err=ERROR_TUNER_CAL_TIMEOUT;
         }
-        else
-        {
-            printf("Debug: VCO Cal took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_CAL_TIMEOUT_MS)));
-        }
     }
 
     /* wait for LOCK bit to go high to say PLL is locked */
@@ -246,10 +241,6 @@ uint8_t stv6120_set_freq(uint8_t tuner, uint32_t freq) {
         if ((err==ERROR_NONE) && (monotonic_ms()>=timeout)) {
             printf("ERROR: tuner wait on lock timed out\n");
             err=ERROR_TUNER_LOCK_TIMEOUT;
-        }
-        else
-        {
-            printf("Debug: PLL Lock took: %"PRIu64"ms\n", (monotonic_ms() - (timeout - STV6120_PLL_TIMEOUT_MS)));
         }
     }
 
