@@ -872,7 +872,7 @@ int main(int argc, char *argv[]) {
 
     printf("Flow: main\n");
 
-    err=process_command_line(argc, argv, &longmynd_config);
+    if (err==ERROR_NONE) err=process_command_line(argc, argv, &longmynd_config);
 
     /* first setup the fifos, udp socket, ftdi and usb */
     if(longmynd_config.status_use_ip) {
@@ -894,13 +894,17 @@ int main(int argc, char *argv[]) {
         .status = &longmynd_status
     };
 
-    if(0 != pthread_create(&thread_ts, NULL, loop_ts, (void *)&thread_vars_ts))
+    if(err==ERROR_NONE)
     {
-        fprintf(stderr, "Error creating loop_ts pthread\n");
-    }
-    else
-    {
-        pthread_setname_np(thread_ts, "TS Transport");
+        if(0 == pthread_create(&thread_ts, NULL, loop_ts, (void *)&thread_vars_ts))
+        {
+            pthread_setname_np(thread_ts, "TS Transport");
+        }
+        else
+        {
+            fprintf(stderr, "Error creating loop_ts pthread\n");
+            err = ERROR_THREAD_ERROR;
+        }
     }
 
     thread_vars_t thread_vars_ts_parse = {
@@ -910,13 +914,17 @@ int main(int argc, char *argv[]) {
         .status = &longmynd_status
     };
 
-    if(0 != pthread_create(&thread_ts_parse, NULL, loop_ts_parse, (void *)&thread_vars_ts_parse))
+    if(err==ERROR_NONE)
     {
-        fprintf(stderr, "Error creating loop_ts_parse pthread\n");
-    }
-    else
-    {
-        pthread_setname_np(thread_ts_parse, "TS Parse");
+        if(0 == pthread_create(&thread_ts_parse, NULL, loop_ts_parse, (void *)&thread_vars_ts_parse))
+        {
+            pthread_setname_np(thread_ts_parse, "TS Parse");
+        }
+        else
+        {
+            fprintf(stderr, "Error creating loop_ts_parse pthread\n");
+            err = ERROR_THREAD_ERROR;
+        }
     }
 
     thread_vars_t thread_vars_i2c = {
@@ -926,13 +934,17 @@ int main(int argc, char *argv[]) {
         .status = &longmynd_status
     };
 
-    if(0 != pthread_create(&thread_i2c, NULL, loop_i2c, (void *)&thread_vars_i2c))
+    if(err==ERROR_NONE)
     {
-        fprintf(stderr, "Error creating loop_i2c pthread\n");
-    }
-    else
-    {
-        pthread_setname_np(thread_i2c, "Receiver");
+        if(0 == pthread_create(&thread_i2c, NULL, loop_i2c, (void *)&thread_vars_i2c))
+        {
+            pthread_setname_np(thread_i2c, "Receiver");
+        }
+        else
+        {
+            fprintf(stderr, "Error creating loop_i2c pthread\n");
+            err = ERROR_THREAD_ERROR;
+        }
     }
 
     thread_vars_t thread_vars_beep = {
@@ -942,23 +954,29 @@ int main(int argc, char *argv[]) {
         .status = &longmynd_status
     };
 
-    if(0 != pthread_create(&thread_beep, NULL, loop_beep, (void *)&thread_vars_beep))
+    if(err==ERROR_NONE)
     {
-        fprintf(stderr, "Error creating loop_beep pthread\n");
-    }
-    else
-    {
-        pthread_setname_np(thread_beep, "Beep Audio");
+        if(0 == pthread_create(&thread_beep, NULL, loop_beep, (void *)&thread_vars_beep))
+        {
+            pthread_setname_np(thread_beep, "Beep Audio");
+        }
+        else
+        {
+            fprintf(stderr, "Error creating loop_beep pthread\n");
+            err = ERROR_THREAD_ERROR;
+        }
     }
 
     uint64_t last_status_sent_monotonic = 0;
     longmynd_status_t longmynd_status_cpy;
 
-    /* Initialise TS data re-init timer to prevent immediate reset */
-    pthread_mutex_lock(&longmynd_status.mutex);
-    longmynd_status.last_ts_or_reinit_monotonic = monotonic_ms();
-    pthread_mutex_unlock(&longmynd_status.mutex);
-
+    if(err==ERROR_NONE)
+    {
+        /* Initialise TS data re-init timer to prevent immediate reset */
+        pthread_mutex_lock(&longmynd_status.mutex);
+        longmynd_status.last_ts_or_reinit_monotonic = monotonic_ms();
+        pthread_mutex_unlock(&longmynd_status.mutex);
+    }
     while (err==ERROR_NONE) {
         /* Test if new status data is available */
         if(longmynd_status.last_updated_monotonic != last_status_sent_monotonic) {
@@ -1003,6 +1021,7 @@ int main(int argc, char *argv[]) {
 
     printf("Flow: Main loop aborted, waiting for threads.\n");
 
+    /* No fatal errors are currently possible here, so don't currently check return values */
     pthread_join(thread_ts_parse, NULL);
     pthread_join(thread_ts, NULL);
     pthread_join(thread_i2c, NULL);
