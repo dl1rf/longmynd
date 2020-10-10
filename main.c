@@ -497,8 +497,8 @@ uint8_t do_report(longmynd_status_t *status) {
 
     /* constellations */
     if (err==ERROR_NONE) {
-        for (uint8_t count=0; count<NUM_CONSTELLATIONS; count++) {
-            stv0910_read_constellation(STV0910_DEMOD_TOP, &status->constellation[count][0], &status->constellation[count][1]);
+        for (uint8_t count=0; (err==ERROR_NONE && count<NUM_CONSTELLATIONS); count++) {
+            err=stv0910_read_constellation(STV0910_DEMOD_TOP, &status->constellation[count][0], &status->constellation[count][1]);
         }
     }
     
