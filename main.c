@@ -606,7 +606,7 @@ void *loop_i2c(void *arg) {
                     /* Power down the synthesizers to potentially improve success on retry. */
                     /* - Everything else gets powered down as well to stay within datasheet-defined states */
                     *err=stv6120_powerdown_both_paths();
-                    if (*err==ERROR_NONE) usleep(100*1000);
+                    if (*err==ERROR_NONE) usleep(200*1000);
                 }
             } while (*thread_vars->main_err_ptr==ERROR_NONE
                     && *err==ERROR_NONE
