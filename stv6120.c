@@ -457,6 +457,8 @@ uint8_t stv6120_powerdown_both_paths(void) {
 /* -------------------------------------------------------------------------------------------------- */
     uint8_t err;
 
+    printf("Flow: Powering down both stv6120 signal paths\n");
+
     /* Path 1 */
     err=stv6120_write_reg(STV6120_CTRL2,
         (STV6120_CTRL2_DCLOOPOFF_DISABLE << STV6120_CTRL2_DCLOOPOFF_SHIFT) |
