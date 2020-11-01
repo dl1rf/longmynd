@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <errno.h>
 #include "errors.h"
 #include "fifo.h"
 
@@ -141,7 +142,7 @@ uint8_t fifo_status_string_write(uint8_t message, char *data) {
 }
 
 /* -------------------------------------------------------------------------------------------------- */
-static uint8_t fifo_init(int *fd_ptr, char *fifo_path) {
+static uint8_t fifo_init(int *fd_ptr, char *fifo_path, bool *fifo_ready) {
 /* -------------------------------------------------------------------------------------------------- */
 /* initialises the ts and status fifos                                                                */
 /*     ts_fifo: the name of the fifo to use for the TS                                                */
@@ -149,16 +150,29 @@ static uint8_t fifo_init(int *fd_ptr, char *fifo_path) {
 /*      return: error code                                                                            */
 /* -------------------------------------------------------------------------------------------------- */
     uint8_t err=ERROR_NONE;
+    *fifo_ready = false;
   
-    printf("Flow: Fifo Init\n");
+    //printf("Flow: Fifo Init\n");
 
-    /* if we are using the TS FIFO then set it up first */
-    *fd_ptr = open(fifo_path, O_WRONLY); 
+    /* First check the file exists */
+    struct stat   buffer; 
+    if(stat(fifo_path, &buffer) < 0) {
+        printf("ERROR: Failed to open fifo %s (error: %s)\n",fifo_path,strerror(errno));
+        err=ERROR_OPEN_TS_FIFO;
+    }
+
     if (err==ERROR_NONE) {
-        if (*fd_ptr<0) {
-            printf("ERROR: Failed to open fifo %s\n",fifo_path);
+        *fd_ptr = open(fifo_path, O_WRONLY | O_NONBLOCK);
+        /* We already ensured it exists, so ENXIO now just means there's nothing listening yet */
+        if (*fd_ptr<0 && errno == ENXIO) {
+            //printf("      Status: fifo not ready\n");
+        } else if(*fd_ptr<0) {
             err=ERROR_OPEN_TS_FIFO;
-        } else printf("      Status: opened fifo ok\n");
+            printf("ERROR: Failed to open fifo %s (error: %s)\n",fifo_path,strerror(errno));
+        } else {
+            printf("      Status: opened fifo ok\n");
+            *fifo_ready = true;
+        }
     }
 
     if (err!=ERROR_NONE) printf("ERROR: fifo init\n");
@@ -166,12 +180,12 @@ static uint8_t fifo_init(int *fd_ptr, char *fifo_path) {
     return err;
 }
 
-uint8_t fifo_ts_init(char *fifo_path) {
-    return fifo_init(&fd_ts_fifo, fifo_path);
+uint8_t fifo_ts_init(char *fifo_path, bool *fifo_ready) {
+    return fifo_init(&fd_ts_fifo, fifo_path, fifo_ready);
 }
 
-uint8_t fifo_status_init(char *fifo_path) {
-    return fifo_init(&fd_status_fifo, fifo_path);
+uint8_t fifo_status_init(char *fifo_path, bool *fifo_ready) {
+    return fifo_init(&fd_status_fifo, fifo_path, fifo_ready);
 }
 
 /* -------------------------------------------------------------------------------------------------- */

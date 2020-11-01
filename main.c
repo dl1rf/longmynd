@@ -862,10 +862,13 @@ int main(int argc, char *argv[]) {
     uint8_t err = ERROR_NONE;
     uint8_t (*status_write)(uint8_t,uint32_t);
     uint8_t (*status_string_write)(uint8_t,char*);
+    bool status_fifo_ready = true;
 
     sigterm_handler_err_ptr = &err;
     signal(SIGTERM, sigterm_handler);
     signal(SIGINT, sigterm_handler);
+    /* Ignore SIGPIPE on closed pipes */
+    signal(SIGPIPE, SIG_IGN);
 
     printf("Flow: main\n");
 
@@ -877,7 +880,7 @@ int main(int argc, char *argv[]) {
         status_write = udp_status_write;
         status_string_write = udp_status_string_write;
     } else {
-        if (err==ERROR_NONE) err=fifo_status_init(longmynd_config.status_fifo_path);
+        if (err==ERROR_NONE) err=fifo_status_init(longmynd_config.status_fifo_path, &status_fifo_ready);
         status_write = fifo_status_write;
         status_string_write = fifo_status_string_write;
     }
@@ -984,8 +987,16 @@ int main(int argc, char *argv[]) {
             /* Release lock on global status struct */
             pthread_mutex_unlock(&longmynd_status.mutex);
 
-            /* Send all status via configured output interface from local copy */
-            err=status_all_write(&longmynd_status_cpy, status_write, status_string_write);
+            if(longmynd_config.status_use_ip || status_fifo_ready)
+            {
+                /* Send all status via configured output interface from local copy */
+                err=status_all_write(&longmynd_status_cpy, status_write, status_string_write);
+            }
+            else if(!longmynd_config.status_use_ip && !status_fifo_ready)
+            {
+                /* Try opening the fifo again */
+                err=fifo_status_init(longmynd_config.status_fifo_path, &status_fifo_ready);
+            }
 
             /* Update monotonic timestamp last sent */
             last_status_sent_monotonic = longmynd_status_cpy.last_updated_monotonic;
