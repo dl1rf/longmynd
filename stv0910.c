@@ -226,7 +226,7 @@ uint8_t stv0910_read_ber(uint8_t demod, uint32_t *ber) {
 }
 
 /* -------------------------------------------------------------------------------------------------- */
-uint8_t stv0910_read_mer(uint8_t demod, uint32_t *mer) {
+uint8_t stv0910_read_mer(uint8_t demod, int32_t *mer) {
 /* -------------------------------------------------------------------------------------------------- */
 /*    demod: STV0910_DEMOD_TOP | STV0910_DEMOD_BOTTOM: which demodulator is being read                */
 /*      mer: place to store the result                                                                */
@@ -237,11 +237,20 @@ uint8_t stv0910_read_mer(uint8_t demod, uint32_t *mer) {
 
                          err=stv0910_read_reg(demod==STV0910_DEMOD_TOP ? RSTV0910_P2_NOSRAMPOS : RSTV0910_P1_NOSRAMPOS, &high);
     if (err==ERROR_NONE) err=stv0910_read_reg(demod==STV0910_DEMOD_TOP ? RSTV0910_P2_NOSRAMVAL : RSTV0910_P1_NOSRAMVAL, &low);
-    
+
     if(((high >> 2) & 0x01) == 1)
     {
         /* Px_NOSRAM_CNRVAL is valid */
-        *mer = ((high & 0x03) << 8) | low;
+        if(((high >> 1) & 0x01) == 1)
+        {
+            /* Negative */
+            *mer = (((high & 0x01) << 8) | low) - 512;
+        }
+        else
+        {
+            *mer = ((high & 0x01) << 8) | low;
+        }
+        
     }
     else
     {
