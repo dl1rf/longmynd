@@ -771,7 +771,7 @@ void *loop_i2c(void *arg) {
 }
 
 /* -------------------------------------------------------------------------------------------------- */
-uint8_t status_all_write(longmynd_status_t *status, uint8_t (*status_write)(uint8_t, uint32_t, bool*), uint8_t (*status_string_write)(uint8_t, char*, bool*), bool *status_output_ready) {
+uint8_t status_all_write(longmynd_status_t *status, uint8_t (*status_write)(uint8_t, uint32_t, bool*), uint8_t (*status_string_write)(uint8_t, char*, bool*), bool *output_ready_ptr) {
 /* -------------------------------------------------------------------------------------------------- */
 /* Reads the past status struct out to the passed write function                                      */
 /*  Returns: error code                                                                               */
@@ -779,62 +779,62 @@ uint8_t status_all_write(longmynd_status_t *status, uint8_t (*status_write)(uint
     uint8_t err=ERROR_NONE;
 
     /* Main status */
-    if (err==ERROR_NONE) err=status_write(STATUS_STATE,status->state, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_STATE,status->state, output_ready_ptr);
     /* LNAs if present */
     if (status->lna_ok) {
-        if (err==ERROR_NONE) err=status_write(STATUS_LNA_GAIN,status->lna_gain, status_output_ready);
+        if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_LNA_GAIN,status->lna_gain, output_ready_ptr);
     }
     /* I,Q powers */
-    if (err==ERROR_NONE) err=status_write(STATUS_POWER_I, status->power_i, status_output_ready);
-    if (err==ERROR_NONE) err=status_write(STATUS_POWER_Q, status->power_q, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_POWER_I, status->power_i, output_ready_ptr);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_POWER_Q, status->power_q, output_ready_ptr);
     /* constellations */
     for (uint8_t count=0; count<NUM_CONSTELLATIONS; count++) {
-        if (err==ERROR_NONE) err=status_write(STATUS_CONSTELLATION_I, status->constellation[count][0], status_output_ready);
-        if (err==ERROR_NONE) err=status_write(STATUS_CONSTELLATION_Q, status->constellation[count][1], status_output_ready);
+        if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_CONSTELLATION_I, status->constellation[count][0], output_ready_ptr);
+        if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_CONSTELLATION_Q, status->constellation[count][1], output_ready_ptr);
     }
     /* puncture rate */
-    if (err==ERROR_NONE) err=status_write(STATUS_PUNCTURE_RATE, status->puncture_rate, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_PUNCTURE_RATE, status->puncture_rate, output_ready_ptr);
     /* carrier frequency offset we are trying */
     /* note we now have the offset, so we need to add in the freq we tried to set it to */
-    if (err==ERROR_NONE) err=status_write(STATUS_CARRIER_FREQUENCY, (uint32_t)(status->frequency_requested+(status->frequency_offset/1000)), status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_CARRIER_FREQUENCY, (uint32_t)(status->frequency_requested+(status->frequency_offset/1000)), output_ready_ptr);
     /* LNB Voltage Supply Enabled: true / false */
-    if (err==ERROR_NONE) err=status_write(STATUS_LNB_SUPPLY, status->polarisation_supply, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_LNB_SUPPLY, status->polarisation_supply, output_ready_ptr);
     /* LNB Voltage Supply is Horizontal Polarisation: true / false */
-    if (err==ERROR_NONE) err=status_write(STATUS_LNB_POLARISATION_H, status->polarisation_horizontal, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_LNB_POLARISATION_H, status->polarisation_horizontal, output_ready_ptr);
     /* symbol rate we are trying */
-    if (err==ERROR_NONE) err=status_write(STATUS_SYMBOL_RATE, status->symbolrate, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_SYMBOL_RATE, status->symbolrate, output_ready_ptr);
     /* viterbi error rate */
-    if (err==ERROR_NONE) err=status_write(STATUS_VITERBI_ERROR_RATE, status->viterbi_error_rate, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_VITERBI_ERROR_RATE, status->viterbi_error_rate, output_ready_ptr);
     /* BER */
-    if (err==ERROR_NONE) err=status_write(STATUS_BER, status->bit_error_rate, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_BER, status->bit_error_rate, output_ready_ptr);
     /* MER */
-    if (err==ERROR_NONE) err=status_write(STATUS_MER, status->modulation_error_rate, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_MER, status->modulation_error_rate, output_ready_ptr);
     /* BCH Uncorrected Errors Flag */
-    if (err==ERROR_NONE) err=status_write(STATUS_ERRORS_BCH_UNCORRECTED, status->errors_bch_uncorrected, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_ERRORS_BCH_UNCORRECTED, status->errors_bch_uncorrected, output_ready_ptr);
     /* BCH Corrected Errors Count */
-    if (err==ERROR_NONE) err=status_write(STATUS_ERRORS_BCH_COUNT, status->errors_bch_count, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_ERRORS_BCH_COUNT, status->errors_bch_count, output_ready_ptr);
     /* LDPC Corrected Errors Count */
-    if (err==ERROR_NONE) err=status_write(STATUS_ERRORS_LDPC_COUNT, status->errors_ldpc_count, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_ERRORS_LDPC_COUNT, status->errors_ldpc_count, output_ready_ptr);
     /* Service Name */
-    if (err==ERROR_NONE) err=status_string_write(STATUS_SERVICE_NAME, status->service_name, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_string_write(STATUS_SERVICE_NAME, status->service_name, output_ready_ptr);
     /* Service Provider Name */
-    if (err==ERROR_NONE) err=status_string_write(STATUS_SERVICE_PROVIDER_NAME, status->service_provider_name, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_string_write(STATUS_SERVICE_PROVIDER_NAME, status->service_provider_name, output_ready_ptr);
     /* TS Null Percentage */
-    if (err==ERROR_NONE) err=status_write(STATUS_TS_NULL_PERCENTAGE, status->ts_null_percentage, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_TS_NULL_PERCENTAGE, status->ts_null_percentage, output_ready_ptr);
     /* TS Elementary Stream PIDs */
     for (uint8_t count=0; count<NUM_ELEMENT_STREAMS; count++) {
         if(status->ts_elementary_streams[count][0] > 0)
         {
-            if (err==ERROR_NONE) err=status_write(STATUS_ES_PID, status->ts_elementary_streams[count][0], status_output_ready);
-            if (err==ERROR_NONE) err=status_write(STATUS_ES_TYPE, status->ts_elementary_streams[count][1], status_output_ready);
+            if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_ES_PID, status->ts_elementary_streams[count][0], output_ready_ptr);
+            if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_ES_TYPE, status->ts_elementary_streams[count][1], output_ready_ptr);
         }
     }
     /* MODCOD */
-    if (err==ERROR_NONE) err=status_write(STATUS_MODCOD, status->modcod, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_MODCOD, status->modcod, output_ready_ptr);
     /* Short Frames */
-    if (err==ERROR_NONE) err=status_write(STATUS_SHORT_FRAME, status->short_frame, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_SHORT_FRAME, status->short_frame, output_ready_ptr);
     /* Pilots */
-    if (err==ERROR_NONE) err=status_write(STATUS_PILOTS, status->pilots, status_output_ready);
+    if (err==ERROR_NONE && *output_ready_ptr) err=status_write(STATUS_PILOTS, status->pilots, output_ready_ptr);
 
     return err;
 }
