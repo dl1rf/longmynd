@@ -76,7 +76,7 @@ void *loop_ts(void *arg) {
 
     uint8_t *buffer;
     uint16_t len=0;
-    uint8_t (*ts_write)(uint8_t*,uint32_t);
+    uint8_t (*ts_write)(uint8_t*,uint32_t,bool*);
     bool fifo_ready;
 
     *err=ERROR_NONE;
@@ -125,7 +125,7 @@ void *loop_ts(void *arg) {
         if ((*err==ERROR_NONE) && (len>2)) {
             if(thread_vars->config->ts_use_ip || fifo_ready)
             {
-                *err=ts_write(&buffer[2],len-2);
+                *err=ts_write(&buffer[2],len-2,&fifo_ready);
             }
             else if(!thread_vars->config->ts_use_ip && !fifo_ready)
             {
