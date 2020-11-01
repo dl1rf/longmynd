@@ -104,6 +104,7 @@ uint8_t fifo_status_write(uint8_t message, uint32_t data) {
     int ret;
     char status_message[30];
 
+    /* WARNING: This currently prints as signed integer (int32_t), even though function appears to expect unsigned (uint32_t) */
     sprintf(status_message, "$%i,%i\n", message, data);
     ret=write(fd_status_fifo, status_message, strlen(status_message));
     if (ret!=(int)strlen(status_message)) {

@@ -109,6 +109,7 @@ uint8_t udp_status_write(uint8_t message, uint32_t data) {
     uint8_t err=ERROR_NONE;
     char status_message[30];
 
+    /* WARNING: This currently prints as signed integer (int32_t), even though function appears to expect unsigned (uint32_t) */
     sprintf(status_message, "$%i,%i\n", message, data);
 
     sendto(sockfd_status, status_message, strlen(status_message), 0, (const struct sockaddr *)&servaddr_status,  sizeof(struct sockaddr)); 
