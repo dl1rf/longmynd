@@ -18,13 +18,13 @@ To run longmynd without requiring root, unplug the minitiouner and then install 
 
 ## Run
 
-For example, to run longmynd with an IF input of 1296.5MHz, Symbol Rate of 2MS/s, and configure a connected RT5047A LNB Regulator for Vertical Polarisation LNB Bias (`-p v`):
+For example, to run longmynd using the Top NIM input socket with an IF input of 1296.5MHz, Symbol Rate of 2MS/s, and configure a connected RT5047A LNB Regulator for Vertical Polarisation LNB Bias (`-p v`):
 
 ```
 ./longmynd -p v 1296500 2000
 ```
 
-With a few more options, this also outputs the Status Information on UDP to localhost on port 4002 (`-I 127.0.0.1 4002`), MPEG Transport Stream on UDP to another machine (192.168.2.34) on port 4003 (`-i 192.168.2.34 4003`), and selects the BOTTOM NIM input port (`-w`).
+With a few more options, this also outputs the Status Information on UDP to localhost on port 4002 (`-I 127.0.0.1 4002`), MPEG Transport Stream on UDP to another machine (192.168.2.34) on port 4003 (`-i 192.168.2.34 4003`), and selects the other (Bottom) NIM input socket (`-w`).
 
 ```
 ./longmynd -i 192.168.2.34 4003 -I 127.0.0.1 4002 -w -p v 1296500 2000
