@@ -18,13 +18,13 @@ To run longmynd without requiring root, unplug the minitiouner and then install 
 
 ## Run
 
-For example, to run with a frequency of 1296.5MHz, Symbol Rate of 2MS/s, and set a connected RT5047A LNB Regulator to Vertical Polarisation LNB Bias (`-p v`):
+For example, to run longmynd with an IF input of 1296.5MHz, Symbol Rate of 2MS/s, and configure a connected RT5047A LNB Regulator for Vertical Polarisation LNB Bias (`-p v`):
 
 ```
 ./longmynd -p v 1296500 2000
 ```
 
-With a few more options, this also outputs the Status Information on UDP to localhost on port 4002 (`-I 127.0.0.1 4002`), Transport Stream on UDP to another machine (192.168.2.34) on port 4003 (`-i 192.168.2.34 4003`), and selects the BOTTOM NIM input port (`-w`).
+With a few more options, this also outputs the Status Information on UDP to localhost on port 4002 (`-I 127.0.0.1 4002`), MPEG Transport Stream on UDP to another machine (192.168.2.34) on port 4003 (`-i 192.168.2.34 4003`), and selects the BOTTOM NIM input port (`-w`).
 
 ```
 ./longmynd -i 192.168.2.34 4003 -I 127.0.0.1 4002 -w -p v 1296500 2000
@@ -59,15 +59,15 @@ A video player (e.g. VLC) can be used to consume the output of the TS FIFO with:
 
 ### UDP Sockets
 
-To use UDP output instead you must set the target address and port for the outputs with: `-I STATUS_ADDRESS STATUS_PORT` `-i TS_ADDRESS TS_PORT`.
+To use UDP outputs instead you must set the target address and port for the outputs with: `-I STATUS_ADDRESS STATUS_PORT` and/or `-i MPEGTS_ADDRESS MPEGTS_PORT`.
 
-To view the UDP status output you can point it at localhost with: `-I 127.0.0.1 4002` and listen in another terminal with netcat: `nc -u -l -k -p 4002`
+For example to view the UDP status output you can point it at localhost with: `-I 127.0.0.1 4002` and listen in another terminal with netcat: `nc -u -l -k -p 4002`
 
-A video player (e.g. VLC) can be set to listen for the incoming TS UDP, on localhost or another machine on the network with: `vlc udp://@:4003`
+A video player (e.g. VLC) can be set to listen for the incoming MPEG-TS UDP, on localhost or another machine on the network with: `vlc udp://@:4003`
 
 ## Status Output Interface
 
-    The status fifo is filled with status information as and when it becomes available.
+    The status fifo / socket is filled with status information as and when it becomes available.
     The format of the status information is:
     
          $n,m<cr>
