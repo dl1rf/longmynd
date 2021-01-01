@@ -201,6 +201,7 @@ void *loop_ts_parse(void *arg) {
     uint32_t ts_payload_content_offset;
     uint32_t ts_payload_content_length;
     uint8_t *ts_payload_ptr;
+    uint32_t ts_payload_offset;
     uint32_t ts_payload_section_length;
 
     uint32_t ts_payload_crc;
@@ -247,6 +248,8 @@ void *loop_ts_parse(void *arg) {
     pthread_cond_init (&longmynd_ts_parse_buffer.signal, &attr);
     pthread_condattr_destroy(&attr);
 
+    pthread_mutex_lock(&longmynd_ts_parse_buffer.mutex);
+
     while(*err == ERROR_NONE && *thread_vars->main_err_ptr == ERROR_NONE)
     {
         //ts_pat_program_pid = 0x00; // Updated by PAT parse
@@ -254,8 +257,6 @@ void *loop_ts_parse(void *arg) {
         /* Reset Stats */
         ts_packet_total_count = 0;
         ts_packet_null_count = 0;
-
-        pthread_mutex_lock(&longmynd_ts_parse_buffer.mutex);
         longmynd_ts_parse_buffer.waiting = true;
 
         while(longmynd_ts_parse_buffer.waiting && *thread_vars->main_err_ptr == ERROR_NONE)
@@ -264,10 +265,9 @@ void *loop_ts_parse(void *arg) {
             clock_gettime(CLOCK_MONOTONIC, &ts);
             timespec_add_ns(&ts, 100 * 1000*1000);
 
+            /* Mutex is unlocked during wait */
             pthread_cond_timedwait(&longmynd_ts_parse_buffer.signal, &longmynd_ts_parse_buffer.mutex, &ts);
         }
-
-        pthread_mutex_unlock(&longmynd_ts_parse_buffer.mutex);
 
         ts_packet_ptr = &ts_buffer[0];
         ts_buffer_length = longmynd_ts_parse_buffer.length;
@@ -374,7 +374,17 @@ void *loop_ts_parse(void *arg) {
             if(ts_pid == TS_PID_SDT)
             {
                 ts_payload_content_length = 0;
-                ts_payload_ptr = (uint8_t *)&ts_packet_ptr[ts_payload_content_offset + 1 + ts_packet_ptr[ts_payload_content_offset]];
+
+                ts_payload_offset = ts_payload_content_offset + 1 + ts_packet_ptr[ts_payload_content_offset];
+
+                if(ts_payload_offset >= (TS_PACKET_SIZE-3)) // '3' at least ensures that ptr[2] is still within the buffer.
+                {
+                    /* Computed offset too large to be valid */
+                    ts_packet_ptr++;
+                    continue;
+                }
+
+                ts_payload_ptr = (uint8_t *)&ts_packet_ptr[ts_payload_offset];
 
                 if(ts_payload_ptr[0] != TS_TABLE_SDT)
                 {
@@ -385,8 +395,9 @@ void *loop_ts_parse(void *arg) {
                 ts_payload_section_length = ((uint32_t)(ts_payload_ptr[1] & 0x0F) << 8) | (uint32_t)ts_payload_ptr[2];
                 //printf(" - SDT Section Length: %"PRIu32"\n", ts_payload_section_length);
 
-                if(ts_payload_section_length < 1)
+                if(ts_payload_section_length < 1 || (ts_payload_offset + ts_payload_section_length) > TS_PACKET_SIZE)
                 {
+                    /* TS Section length invalid */
                     ts_packet_ptr++;
                     continue;
                 }
@@ -453,7 +464,16 @@ void *loop_ts_parse(void *arg) {
             }
             else // if(ts_pat_program_pid !=0x00 && ts_pid == ts_pat_program_pid) /* PMT, once found in PAT */
             {
-                ts_payload_ptr = (uint8_t *)&ts_packet_ptr[ts_payload_content_offset + 1 + ts_packet_ptr[ts_payload_content_offset]];
+                ts_payload_offset = ts_payload_content_offset + 1 + ts_packet_ptr[ts_payload_content_offset];
+
+                if(ts_payload_offset >= (TS_PACKET_SIZE-3)) // '3' at least ensures that ptr[2] is still within the buffer.
+                {
+                    /* Computed offset too large to be valid */
+                    ts_packet_ptr++;
+                    continue;
+                }
+
+                ts_payload_ptr = (uint8_t *)&ts_packet_ptr[ts_payload_offset];
 
                 /* We're not filtering by PID here yet, so we rely on filtering by table ID */
                 if(ts_payload_ptr[0] != TS_TABLE_PMT)
@@ -464,8 +484,9 @@ void *loop_ts_parse(void *arg) {
 
                 ts_payload_section_length = ((uint32_t)(ts_payload_ptr[1] & 0x0F) << 8) | (uint32_t)ts_payload_ptr[2];
 
-                if(ts_payload_section_length < 1)
+                if(ts_payload_section_length < 1 || (ts_payload_offset + ts_payload_section_length) > TS_PACKET_SIZE)
                 {
+                    /* TS Section length invalid */
                     ts_packet_ptr++;
                     continue;
                 }
@@ -537,6 +558,8 @@ void *loop_ts_parse(void *arg) {
 
         pthread_mutex_unlock(&status->mutex);
     }
+
+    pthread_mutex_unlock(&longmynd_ts_parse_buffer.mutex);
 
     free(ts_buffer);
 
