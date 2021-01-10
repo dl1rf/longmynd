@@ -76,7 +76,8 @@ void *loop_ts(void *arg) {
 
     uint8_t *buffer;
     uint16_t len=0;
-    uint8_t (*ts_write)(uint8_t*,uint32_t);
+    uint8_t (*ts_write)(uint8_t*,uint32_t,bool*);
+    bool fifo_ready;
 
     *err=ERROR_NONE;
 
@@ -90,7 +91,7 @@ void *loop_ts(void *arg) {
         *err=udp_ts_init(thread_vars->config->ts_ip_addr, thread_vars->config->ts_ip_port);
         ts_write = udp_ts_write;
     } else {
-        *err=fifo_ts_init(thread_vars->config->ts_fifo_path);
+        *err=fifo_ts_init(thread_vars->config->ts_fifo_path, &fifo_ready);
         ts_write = fifo_ts_write;
     }
 
@@ -122,7 +123,15 @@ void *loop_ts(void *arg) {
         /* if there is ts data then we send it out to the required output. But, we have to lose the first 2 bytes */
         /* that are the usual FTDI 2 byte response and not part of the TS */
         if ((*err==ERROR_NONE) && (len>2)) {
-            ts_write(&buffer[2],len-2);
+            if(thread_vars->config->ts_use_ip || fifo_ready)
+            {
+                *err=ts_write(&buffer[2],len-2,&fifo_ready);
+            }
+            else if(!thread_vars->config->ts_use_ip && !fifo_ready)
+            {
+                /* Try opening the fifo again */
+                *err=fifo_ts_init(thread_vars->config->ts_fifo_path, &fifo_ready);
+            }
 
             if(longmynd_ts_parse_buffer.waiting
                 && longmynd_ts_parse_buffer.buffer != NULL
