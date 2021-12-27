@@ -72,11 +72,11 @@ const char *dvbCharCodeA3Lookup[] =
     /* 0x0E */ NULL,
     /* 0x0F */ NULL,
     /* 0x10 */ NULL, // See table A.4
-    /* 0x11 */ "UTF−8", // ISO/IEC 10646 - Not sure if this should be UCS-2 ?
+    /* 0x11 */ "UTF-8", // ISO/IEC 10646 - Not sure if this should be UCS-2 ?
     /* 0x12 */ "EUC-KR", // KSX1001-2004
-    /* 0x13 */ "EUC−CN", // GB-2312-1980
+    /* 0x13 */ "EUC-CN", // GB-2312-1980
     /* 0x14 */ "BIG5", // Big5 subset of ISO/IEC 10646
-    /* 0x15 */ "UTF−8", // UTF-8 encoding of ISO/IEC 10646
+    /* 0x15 */ "UTF-8", // UTF-8 encoding of ISO/IEC 10646
     /* 0x16 */ NULL,
     /* 0x17 */ NULL,
     /* 0x18 */ NULL,
@@ -108,11 +108,11 @@ const char *dvbCharCodeA4Lookup[] =
     /* 0x0E */ "ISO-8859-14",
     /* 0x0F */ "ISO-8859-15",
     /* 0x10 */ NULL, // See table A.4
-    /* 0x11 */ "UTF−8", // ISO/IEC 10646 - Not sure if this should be UCS-2 ?
+    /* 0x11 */ "UTF-8", // ISO/IEC 10646 - Not sure if this should be UCS-2 ?
     /* 0x12 */ "EUC-KR", // KSX1001-2004
-    /* 0x13 */ "EUC−CN", // GB-2312-1980
+    /* 0x13 */ "EUC-CN", // GB-2312-1980
     /* 0x14 */ "BIG5", // Big5 subset of ISO/IEC 10646
-    /* 0x15 */ "UTF−8", // UTF-8 encoding of ISO/IEC 10646
+    /* 0x15 */ "UTF-8", // UTF-8 encoding of ISO/IEC 10646
     /* 0x16 */ NULL,
     /* 0x17 */ NULL,
     /* 0x18 */ NULL,
@@ -256,14 +256,14 @@ static void ts_callback_sdt_service(
 
         if(dvbCharCodeA3Lookup[(int)service_name_ptr[0]] != NULL)
         {
-            dvb_text_ic = iconv_open("UTF−8", dvbCharCodeA3Lookup[(int)service_name_ptr[0]]);
+            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_name_ptr[0]]);
         }
         else if((int)service_name_ptr[0] == 0x10
             && (int)service_name_ptr[1] == 0x00
             && (int)service_name_ptr[2] < 0x10
             && dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
         {
-            dvb_text_ic = iconv_open("UTF−8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
+            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
@@ -298,14 +298,14 @@ static void ts_callback_sdt_service(
 
         if(dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]] != NULL)
         {
-            dvb_text_ic = iconv_open("UTF−8", dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]]);
+            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]]);
         }
         else if((int)service_provider_name_ptr[0] == 0x10
             && (int)service_provider_name_ptr[1] == 0x00
             && (int)service_provider_name_ptr[2] < 0x10
             && dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
         {
-            dvb_text_ic = iconv_open("UTF−8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
+            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
