@@ -257,6 +257,9 @@ static void ts_callback_sdt_service(
         if(dvbCharCodeA3Lookup[(int)service_name_ptr[0]] != NULL)
         {
             dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_name_ptr[0]]);
+            /* Move pointer past the control codes */
+            service_name_ptr += 1;
+            *service_name_length_ptr -= 1;
         }
         else if((int)service_name_ptr[0] == 0x10
             && (int)service_name_ptr[1] == 0x00
@@ -264,6 +267,9 @@ static void ts_callback_sdt_service(
             && dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
         {
             dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
+            /* Move pointer past the control codes */
+            service_name_ptr += 3;
+            *service_name_length_ptr -= 3;
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
@@ -271,9 +277,12 @@ static void ts_callback_sdt_service(
             char *service_name_iconv_ptr = (char *)service_name_ptr;
             size_t service_name_iconv_remaining = *service_name_length_ptr;
 
+            /* iconv modifies the output pointer, so we give it a copy */
+            char *service_name_iconv_buffer_ptr = service_name_iconv_buffer;
+
             iconv(dvb_text_ic,
                 &service_name_iconv_ptr, &service_name_iconv_remaining,
-                &service_name_iconv_buffer, &service_name_iconv_buffer_left);
+                &service_name_iconv_buffer_ptr, &service_name_iconv_buffer_left);
 
             if(service_name_iconv_remaining == 0)
             {
@@ -299,6 +308,9 @@ static void ts_callback_sdt_service(
         if(dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]] != NULL)
         {
             dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]]);
+            /* Move pointer past the control codes */
+            service_provider_name_ptr += 1;
+            *service_provider_name_length_ptr -= 1;
         }
         else if((int)service_provider_name_ptr[0] == 0x10
             && (int)service_provider_name_ptr[1] == 0x00
@@ -306,6 +318,9 @@ static void ts_callback_sdt_service(
             && dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
         {
             dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
+            /* Move pointer past the control codes */
+            service_provider_name_ptr += 3;
+            *service_provider_name_length_ptr -= 3;
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
@@ -313,9 +328,11 @@ static void ts_callback_sdt_service(
             char *service_provider_name_iconv_ptr = (char *)service_provider_name_ptr;
             size_t service_provider_name_iconv_remaining = *service_provider_name_length_ptr;
 
+            /* iconv modifies the output pointer, so we give it a copy */
+            char *service_provider_name_iconv_buffer_ptr = service_provider_name_iconv_buffer;
             iconv(dvb_text_ic,
                 &service_provider_name_iconv_ptr, &service_provider_name_iconv_remaining,
-                &service_provider_name_iconv_buffer, &service_provider_name_iconv_buffer_left);
+                &service_provider_name_iconv_buffer_ptr, &service_provider_name_iconv_buffer_left);
 
             if(service_provider_name_iconv_remaining == 0)
             {
