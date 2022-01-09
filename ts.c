@@ -243,9 +243,7 @@ static void ts_callback_sdt_service(
     uint32_t service_provider_name_iconv_buffer_length = 0;
 
     /* Check character encoding */
-    if(*service_name_length_ptr > 0
-        && service_name_ptr[0] < 0x20
-        && dvbCharCodeA3Lookup[(int)service_name_ptr[0]] != NULL)
+    if(*service_name_length_ptr > 0)
     {
         /* Service Name */
         service_name_iconv_buffer_length = 6*(*service_name_length_ptr);
@@ -254,22 +252,39 @@ static void ts_callback_sdt_service(
 
         iconv_t dvb_text_ic = NULL;
 
-        if(dvbCharCodeA3Lookup[(int)service_name_ptr[0]] != NULL)
+        /* Check for explicit decoding table */
+        if(service_name_ptr[0] < 0x20)
         {
-            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_name_ptr[0]]);
-            /* Move pointer past the control codes */
-            service_name_ptr += 1;
-            *service_name_length_ptr -= 1;
+            if(dvbCharCodeA3Lookup[(int)service_name_ptr[0]] != NULL)
+            {
+                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_name_ptr[0]]);
+                /* Move pointer past the character set */
+                service_name_ptr += 1;
+                *service_name_length_ptr -= 1;
+            }
+            else if((int)service_name_ptr[0] == 0x10
+                && (int)service_name_ptr[1] == 0x00
+                && (int)service_name_ptr[2] < 0x10
+                && dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
+            {
+                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
+                /* Move pointer past the character set */
+                service_name_ptr += 3;
+                *service_name_length_ptr -= 3;
+            }
+            else
+            {
+                /* Unknown, assume Latin alphabet */
+                dvb_text_ic = iconv_open("UTF-8", "ISO6937");
+                /* Move pointer past the character set */
+                service_name_ptr += 1;
+                *service_name_length_ptr -= 1;
+            }
         }
-        else if((int)service_name_ptr[0] == 0x10
-            && (int)service_name_ptr[1] == 0x00
-            && (int)service_name_ptr[2] < 0x10
-            && dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
+        else
         {
-            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
-            /* Move pointer past the control codes */
-            service_name_ptr += 3;
-            *service_name_length_ptr -= 3;
+            /* Default is approximately Latin alphabet */
+            dvb_text_ic = iconv_open("UTF-8", "ISO6937");
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
@@ -294,9 +309,7 @@ static void ts_callback_sdt_service(
             iconv_close(dvb_text_ic);
         }
     }
-    if(*service_provider_name_length_ptr > 0
-        && service_provider_name_ptr[0] < 0x20
-        && dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]] != NULL)
+    if(*service_provider_name_length_ptr > 0)
     {
         /* Service Provider */
         service_provider_name_iconv_buffer_length = 6*(*service_provider_name_length_ptr);
@@ -305,22 +318,40 @@ static void ts_callback_sdt_service(
 
         iconv_t dvb_text_ic = NULL;
 
-        if(dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]] != NULL)
+        /* Check for explicit decoding table */
+        if(service_provider_name_ptr[0] < 0x20)
         {
-            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]]);
-            /* Move pointer past the control codes */
-            service_provider_name_ptr += 1;
-            *service_provider_name_length_ptr -= 1;
+
+            if(dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]] != NULL)
+            {
+                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA3Lookup[(int)service_provider_name_ptr[0]]);
+                /* Move pointer past the control codes */
+                service_provider_name_ptr += 1;
+                *service_provider_name_length_ptr -= 1;
+            }
+            else if((int)service_provider_name_ptr[0] == 0x10
+                && (int)service_provider_name_ptr[1] == 0x00
+                && (int)service_provider_name_ptr[2] < 0x10
+                && dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
+            {
+                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
+                /* Move pointer past the control codes */
+                service_provider_name_ptr += 3;
+                *service_provider_name_length_ptr -= 3;
+            }
+            else
+            {
+                /* Unknown, assume Latin alphabet */
+                dvb_text_ic = iconv_open("UTF-8", "ISO6937");
+                /* Move pointer past the character set */
+                service_provider_name_ptr += 1;
+                *service_provider_name_length_ptr -= 1;
+            }
         }
-        else if((int)service_provider_name_ptr[0] == 0x10
-            && (int)service_provider_name_ptr[1] == 0x00
-            && (int)service_provider_name_ptr[2] < 0x10
-            && dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
+        else
         {
-            dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
-            /* Move pointer past the control codes */
-            service_provider_name_ptr += 3;
-            *service_provider_name_length_ptr -= 3;
+            /* Default is approximately Latin alphabet */
+            dvb_text_ic = iconv_open("UTF-8", "ISO6937");
         }
 
         if(dvb_text_ic != NULL && (intptr_t)dvb_text_ic != -1)
