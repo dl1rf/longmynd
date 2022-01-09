@@ -264,13 +264,23 @@ static void ts_callback_sdt_service(
             }
             else if((int)service_name_ptr[0] == 0x10
                 && (int)service_name_ptr[1] == 0x00
-                && (int)service_name_ptr[2] < 0x10
-                && dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
+                && (int)service_name_ptr[2] < 0x10)
             {
-                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
-                /* Move pointer past the character set */
-                service_name_ptr += 3;
-                *service_name_length_ptr -= 3;
+                if(dvbCharCodeA4Lookup[(int)service_name_ptr[2]] != NULL)
+                {
+                    dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_name_ptr[2]]);
+                    /* Move pointer past the character set */
+                    service_name_ptr += 3;
+                    *service_name_length_ptr -= 3;
+                }
+                else
+                {
+                    /* Unknown, assume Latin alphabet */
+                    dvb_text_ic = iconv_open("UTF-8", "ISO6937");
+                    /* Move pointer past the character set */
+                    service_name_ptr += 3;
+                    *service_name_length_ptr -= 3;
+                }
             }
             else
             {
@@ -331,13 +341,23 @@ static void ts_callback_sdt_service(
             }
             else if((int)service_provider_name_ptr[0] == 0x10
                 && (int)service_provider_name_ptr[1] == 0x00
-                && (int)service_provider_name_ptr[2] < 0x10
-                && dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
+                && (int)service_provider_name_ptr[2] < 0x10)
             {
-                dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
-                /* Move pointer past the control codes */
-                service_provider_name_ptr += 3;
-                *service_provider_name_length_ptr -= 3;
+                if(dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]] != NULL)
+                {
+                    dvb_text_ic = iconv_open("UTF-8", dvbCharCodeA4Lookup[(int)service_provider_name_ptr[2]]);
+                    /* Move pointer past the control codes */
+                    service_provider_name_ptr += 3;
+                    *service_provider_name_length_ptr -= 3;
+                }
+                else
+                {
+                    /* Unknown, assume Latin alphabet */
+                    dvb_text_ic = iconv_open("UTF-8", "ISO6937");
+                    /* Move pointer past the character set */
+                    service_provider_name_ptr += 3;
+                    *service_provider_name_length_ptr -= 3;
+                }
             }
             else
             {
