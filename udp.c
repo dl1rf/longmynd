@@ -46,7 +46,7 @@
 struct sockaddr_in servaddr_status; 
 struct sockaddr_in servaddr_ts;
 int sockfd_status; 
-int sockfd_ts;
+int sockfd_ts = 0;
 
 /* -------------------------------------------------------------------------------------------------- */
 /* ----------------- DEFINES ------------------------------------------------------------------------ */
@@ -150,6 +150,13 @@ static uint8_t udp_init(struct sockaddr_in *servaddr_ptr, int *sockfd_ptr, char 
     uint8_t err=ERROR_NONE;
   
     printf("Flow: UDP Init\n");
+
+    /* If socket already existed then close it */
+    if(*sockfd_ptr > 0)
+    {
+        close(*sockfd_ptr);
+        *sockfd_ptr = 0;
+    }
 
     /* Creat the socket  for IPv4 and UDP */
     if ((*sockfd_ptr = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 

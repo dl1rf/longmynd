@@ -86,6 +86,7 @@ typedef struct {
     char ts_fifo_path[128];
     char ts_ip_addr[16];
     int ts_ip_port;
+    bool ts_config_new;
 
     bool status_use_ip;
     char status_fifo_path[128];
@@ -107,6 +108,7 @@ typedef struct {
 typedef struct {
     uint8_t state;
     uint8_t demod_state;
+    uint8_t rfport_index;
     bool lna_ok;
     uint16_t lna_gain;
     uint16_t agc1_gain;
@@ -155,6 +157,8 @@ void config_set_frequency(uint32_t frequency);
 void config_set_symbolrate(uint32_t symbolrate);
 void config_set_frequency_and_symbolrate(uint32_t frequency, uint32_t symbolrate);
 void config_set_lnbv(bool enabled, bool horizontal);
+void config_set_udpts(char *udp_host, int udp_port);
+void config_set_rfport(int rfport_index);
 void config_reinit(bool increment_frsr);
 
 #endif

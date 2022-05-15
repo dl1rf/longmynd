@@ -61,6 +61,7 @@
 /* -------------------------------------------------------------------------------------------------- */
 
 static longmynd_config_t longmynd_config = {
+    .ts_config_new = false,
     .new = false,
     .mutex = PTHREAD_MUTEX_INITIALIZER,
     .freq_index = 0,
@@ -154,6 +155,33 @@ void config_set_lnbv(bool enabled, bool horizontal)
 
     longmynd_config.polarisation_supply = enabled;
     longmynd_config.polarisation_horizontal = horizontal;
+    longmynd_config.new = true;
+
+    pthread_mutex_unlock(&longmynd_config.mutex);
+}
+
+void config_set_udpts(char *udp_host, int udp_port)
+{
+    pthread_mutex_lock(&longmynd_config.mutex);
+
+    longmynd_config.ts_use_ip = true;
+    strncpy(longmynd_config.ts_ip_addr, udp_host, sizeof(longmynd_config.ts_ip_addr));
+    longmynd_config.ts_ip_port = udp_port;
+    longmynd_config.ts_config_new = true;
+
+    pthread_mutex_unlock(&longmynd_config.mutex);
+}
+
+void config_set_rfport(int rfport_index)
+{
+    pthread_mutex_lock(&longmynd_config.mutex);
+
+    if(rfport_index == 0) {
+        longmynd_config.port_swap = false;
+    }
+    else if(rfport_index == 1) {
+        longmynd_config.port_swap = true;
+    }
     longmynd_config.new = true;
 
     pthread_mutex_unlock(&longmynd_config.mutex);
@@ -610,6 +638,7 @@ void *loop_i2c(void *arg) {
             thread_vars->config->ts_reset = true;
             pthread_mutex_unlock(&thread_vars->config->mutex);
 
+            status_cpy.rfport_index = (config_cpy.port_swap) ? 1 : 0;
             status_cpy.frequency_requested = config_cpy.freq_requested[config_cpy.freq_index];
             status_cpy.symbolrate_requested = config_cpy.sr_requested[config_cpy.sr_index];
 

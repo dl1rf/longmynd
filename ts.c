@@ -149,11 +149,11 @@ void *loop_ts(void *arg) {
         *err=ERROR_TS_BUFFER_MALLOC;
     }
 
-    if(thread_vars->config->ts_use_ip) {
-        *err=udp_ts_init(thread_vars->config->ts_ip_addr, thread_vars->config->ts_ip_port);
+    if(config->ts_use_ip) {
+        *err=udp_ts_init(config->ts_ip_addr, config->ts_ip_port);
         ts_write = udp_ts_write;
     } else {
-        *err=fifo_ts_init(thread_vars->config->ts_fifo_path, &fifo_ready);
+        *err=fifo_ts_init(config->ts_fifo_path, &fifo_ready);
         ts_write = fifo_ts_write;
     }
 
@@ -181,6 +181,19 @@ void *loop_ts(void *arg) {
         }
 
         *err=ftdi_usb_ts_read(buffer, &len, TS_FRAME_SIZE);
+
+        /* */
+        if((*err==ERROR_NONE) && (0 == pthread_mutex_trylock(&config->mutex))) {
+            if(config->ts_config_new) {
+                /* For now we only handle UDP parameters changing, I don't know FIFO behaviour well enough */
+                if(config->ts_use_ip) {
+                    *err=udp_ts_init(config->ts_ip_addr, config->ts_ip_port);
+                    ts_write = udp_ts_write;
+                }
+                config->ts_config_new = false;
+            }
+            pthread_mutex_unlock(&config->mutex);
+        }
 
         /* if there is ts data then we send it out to the required output. But, we have to lose the first 2 bytes */
         /* that are the usual FTDI 2 byte response and not part of the TS */

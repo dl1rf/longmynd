@@ -154,7 +154,7 @@ int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
             }
             if(vhost_session->protocol->id == WS_CONTROL)
             {
-                if(len >= 3 && len < 32)
+                if(len >= 2 && len < 32)
                 {
                     char message_string[32];
                     memcpy(message_string, in, len);
@@ -211,6 +211,34 @@ int callback_ws(struct lws *wsi, enum lws_callback_reasons reason, void *user, v
                             lnbv_horizontal = (bool)!!strtol(&field2_ptr[1],NULL,10);
                             config_set_lnbv(lnbv_enabled, lnbv_horizontal);
                         }
+                    }
+                    else if(message_string[0] == 'U')
+                    {
+                        /* UDP Target Command (host and port) */
+                        char *field2_ptr;
+                        char *udp_host;
+                        int udp_port;
+
+                        /* Find field divider */
+                        field2_ptr = memchr(message_string, ':', len);
+                        if(field2_ptr != NULL)
+                        {
+                            /* Divide the strings */
+                            field2_ptr[0] = '\0';
+
+                            udp_host = &message_string[1];
+                            udp_port = (int)strtol(&field2_ptr[1],NULL,10);
+
+                            config_set_udpts(udp_host, udp_port);
+                        }
+                    }
+                    else if(message_string[0] == 'T')
+                    {
+                        /* Tuner / RF Port Index Command */
+                        int rfport_index;
+
+                        rfport_index = (int)strtol(&message_string[1],NULL,10);
+                        config_set_rfport(rfport_index);
                     }
                 }
             }
@@ -294,6 +322,8 @@ static void web_status_json(char **status_string_ptr, longmynd_status_t *status,
     /* Receiver */
 
     statusPacketRxObj = json_mkobject();
+
+    json_append_member(statusPacketRxObj, "rfport", json_mknumber((double)status_cache->rfport_index));
 
     json_append_member(statusPacketRxObj, "demod_state", json_mknumber((double)status_cache->state));
 
