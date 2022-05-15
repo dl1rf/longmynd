@@ -126,6 +126,46 @@ function longmynd_lnbv(_enabled, _horizontal)
   }
 }
 
+function longmynd_rfport(_rfport_index)
+{
+  ws_control.sendMessage("T"+_rfport_index);
+
+  if(vlc_control_autoreset)
+  {
+    /* Reset locally-running VLC */
+    /* Requires configuration in VLC:
+     - 'Tools' -> 'Preferences'
+     - Select 'Show Settings' -> 'All', in bottom left.
+     - Navigate to 'Interface' -> 'Main Interfaces'
+     - Tick 'Extra Interface Modules' -> 'Web'
+     - Click 'Save' to exit
+    */
+    $.ajax({
+      url: "http://"+vlc_control_autoreset_ip+":8080/requests/status.xml?command=pl_next"
+    });
+  }
+}
+
+function longmynd_udpts(_udp_host, _udp_port)
+{
+  ws_control.sendMessage("U"+_udp_host+':'+_udp_port);
+
+  if(vlc_control_autoreset)
+  {
+    /* Reset locally-running VLC */
+    /* Requires configuration in VLC:
+     - 'Tools' -> 'Preferences'
+     - Select 'Show Settings' -> 'All', in bottom left.
+     - Navigate to 'Interface' -> 'Main Interfaces'
+     - Tick 'Extra Interface Modules' -> 'Web'
+     - Click 'Save' to exit
+    */
+    $.ajax({
+      url: "http://"+vlc_control_autoreset_ip+":8080/requests/status.xml?command=pl_next"
+    });
+  }
+}
+
 function load_settings()
 {
   if(typeof(Storage) !== "undefined")
@@ -232,6 +272,31 @@ function longmynd_render_status(data_json)
 
       $("#span-status-frequency").text((rx_status.frequency + lo_frequency)/1000.0 + "MHz");
       $("#span-status-symbolrate").text((rx_status.symbolrate / 1000.0)+"KS");
+
+      if(rx_status.rfport == 0)
+      {
+        $("#button-port-bottom").removeClass("active");
+        $("#button-port-bottom > input")[0].checked = false;
+
+        $("#button-port-top").addClass("active")
+        $("#button-port-top > input")[0].checked = true;
+      }
+      else if(rx_status.rfport == 1)
+      {
+        $("#button-port-top").removeClass("active");
+        $("#button-port-top > input")[0].checked = false;
+
+        $("#button-port-bottom").addClass("active")
+        $("#button-port-bottom > input")[0].checked = true;
+      }
+      else
+      {
+        /* Input Unknown */
+        $("#button-port-top").removeClass("active");
+        $("#button-port-top > input")[0].checked = false;
+        $("#button-port-bottom").removeClass("active");
+        $("#button-port-bottom > input")[0].checked = false;
+      }
 
       if(rx_status.lnb_voltage_enabled)
       {
@@ -482,6 +547,42 @@ $(document).ready(function()
   $('#button-lnbv-18v').click(function()
   {  
     longmynd_lnbv(true, true);
+  });
+
+  $('#button-port-top').click(function()
+  {  
+    longmynd_rfport(0);
+  });
+  $('#button-port-bottom').click(function()
+  {  
+    longmynd_rfport(1);
+  });
+
+  $('#button-udpts-submit').click(function()
+  {
+    console.log('t');
+    var udpts_host;
+    var udpts_port;
+    if(ip_address_regex.test($('#input-udpts-host').val()))
+    {
+      $('#input-udpts-host').removeClass("is-invalid");
+      udpts_host = $('#input-udpts-host').val();
+
+      if($('#input-udpts-port').val() < 65535 && $('#input-udpts-port').val() > 1024)
+      {
+        udpts_port = $('#input-udpts-port').val();
+
+        longmynd_udpts(udpts_host, udpts_port);
+      }
+      else
+      {
+        $('#input-udpts-port').addClass("is-invalid");
+      }
+    }
+    else
+    {
+      $('#input-udpts-host').addClass("is-invalid");
+    }
   });
 
   ws_monitor = new strWebsocket(ws_longmynd_url, "monitor", ws_monitor_buffer);

@@ -56,6 +56,15 @@
                     </label>
                   </div>
                   <hr>
+                  RF Port:<br>
+                  <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                    <label class="btn btn-sm btn-secondary" id="button-port-top">
+                      <input type="radio" name="options"> TOP
+                    </label>
+                    <label class="btn btn-sm btn-secondary" id="button-port-bottom">
+                      <input type="radio" name="options"> BOTTOM
+                    </label>
+                  </div><br>
                   LO:         <input type="text" class="form-control form-control-sm" id="input-frequency-lo" placeholder="LO Frequency">
                   LNB Bias Voltage:<br>
                   <div class="btn-group btn-group-toggle" data-toggle="buttons">
@@ -72,7 +81,11 @@
                   <hr>
                   VLC Autoreset:
                   <input type="checkbox" class="form-vlcautoreset-checkbox" id="input-vlcautoreset-enable">
-                    <input type="text" class="form-control form-control-sm" id="input-vlcautoreset-ip" placeholder="IP Address">
+                    <input type="text" class="form-control form-control-sm" id="input-vlcautoreset-ip" placeholder="IP Address"><br>
+                  TS Output:<br>
+                  <input type="text" class="form-control form-control-sm" id="input-udpts-host" placeholder="TS UDP Host">
+                  <input type="text" class="form-control form-control-sm" id="input-udpts-port" placeholder="TS UDP Port">
+                  <button class="form-control form-control-sm" id="button-udpts-submit">Set</button>
                 </td>
                 <td width="33%">
                   Frequency:  <span id="span-status-frequency"></span><br>
