@@ -3,6 +3,7 @@
 SRC = main.c nim.c ftdi.c stv0910.c stv0910_utils.c stvvglna.c stvvglna_utils.c stv6120.c stv6120_utils.c ftdi_usb.c fifo.c udp.c beep.c ts.c libts.c
 SRC += web/web.c web/json.c
 OBJ = ${SRC:.c=.o}
+DEP := ${SRC:.c=.d}
 
 ifndef CC
 CC = gcc
@@ -61,7 +62,9 @@ longmynd: ${OBJ}
 
 %.o: %.c
 	@echo "  CC     "$<
-	@${CC} ${COPT} ${CFLAGS} -I $(LWS_LIBSDIR) -c -fPIC -o $@ $<
+	@${CC} ${COPT} ${CFLAGS} -I $(LWS_LIBSDIR) -MMD -MP -c -fPIC -o $@ $<
+
+-include $(DEP)
 
 clean:
 	@rm -rf longmynd fake_read ts_analyse ${OBJ}
