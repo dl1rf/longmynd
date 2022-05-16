@@ -162,9 +162,11 @@ void *loop_ts(void *arg) {
     pthread_mutex_lock(&status->mutex);
 
     status->ts_use_ip = config->ts_use_ip;
-    strncpy(status->ts_ip_addr, config->ts_ip_addr, sizeof(status->ts_ip_addr));
+    strncpy(status->ts_ip_addr, config->ts_ip_addr, (sizeof(status->ts_ip_addr)-1));
+    status->ts_ip_addr[sizeof(status->ts_ip_addr)-1] = '\0';
     status->ts_ip_port = config->ts_ip_port;
-    strncpy(status->ts_fifo_path, config->ts_fifo_path, sizeof(status->ts_fifo_path));
+    strncpy(status->ts_fifo_path, config->ts_fifo_path, (sizeof(status->ts_fifo_path)-1));
+    status->ts_fifo_path[sizeof(status->ts_fifo_path)-1] = '\0';
 
     pthread_mutex_unlock(&status->mutex);
     pthread_mutex_unlock(&config->mutex);
@@ -207,9 +209,11 @@ void *loop_ts(void *arg) {
             pthread_mutex_lock(&status->mutex);
 
             status->ts_use_ip = config->ts_use_ip;
-            strncpy(status->ts_ip_addr, config->ts_ip_addr, sizeof(status->ts_ip_addr));
+            strncpy(status->ts_ip_addr, config->ts_ip_addr, (sizeof(status->ts_ip_addr)-1));
+            status->ts_ip_addr[sizeof(status->ts_ip_addr)-1] = '\0';
             status->ts_ip_port = config->ts_ip_port;
-            //strncpy(status->ts_fifo_path, config->ts_fifo_path, sizeof(status->ts_fifo_path));
+            //strncpy(status->ts_fifo_path, config->ts_fifo_path, (sizeof(status->ts_fifo_path)-1));
+            //status->ts_fifo_path[sizeof(status->ts_fifo_path)-1] = '\0';
 
             pthread_mutex_unlock(&status->mutex);
             pthread_mutex_unlock(&config->mutex);

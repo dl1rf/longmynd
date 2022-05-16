@@ -245,6 +245,8 @@ function longmynd_render_status(data_json)
     {
       rx_status = status_obj.packet.rx;
 
+      console.log(rx_status);
+
       if(rx_status.demod_state == 2)
       {
         /* Header.. */
@@ -560,7 +562,6 @@ $(document).ready(function()
 
   $('#button-udpts-submit').click(function()
   {
-    console.log('t');
     var udpts_host;
     var udpts_port;
     if(ip_address_regex.test($('#input-udpts-host').val()))

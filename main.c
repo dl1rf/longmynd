@@ -165,7 +165,8 @@ void config_set_udpts(char *udp_host, int udp_port)
     pthread_mutex_lock(&longmynd_config.mutex);
 
     longmynd_config.ts_use_ip = true;
-    strncpy(longmynd_config.ts_ip_addr, udp_host, sizeof(longmynd_config.ts_ip_addr));
+    strncpy(longmynd_config.ts_ip_addr, udp_host, (sizeof(longmynd_config.ts_ip_addr)-1));
+    longmynd_config.ts_ip_addr[sizeof(longmynd_config.ts_ip_addr)-1] = '\0';
     longmynd_config.ts_ip_port = udp_port;
     longmynd_config.ts_config_new = true;
 
@@ -276,27 +277,32 @@ uint8_t process_command_line(int argc, char *argv[], longmynd_config_t *config) 
                 main_usb_set=true;
                 break;
             case 'i':
-                strncpy(config->ts_ip_addr,argv[param++], (16-1));
+                strncpy(config->ts_ip_addr, argv[param++], (sizeof(config->ts_ip_addr)-1));
+                config->ts_ip_addr[sizeof(config->ts_ip_addr)-1] = '\0';
                 config->ts_ip_port=(uint16_t)strtol(argv[param],NULL,10);
                 config->ts_use_ip=true;
                 ts_ip_set = true;
                 break;
             case 't':
-                strncpy(config->ts_fifo_path, argv[param], (128-1));
+                strncpy(config->ts_fifo_path, argv[param], (sizeof(config->ts_fifo_path)-1));
+                config->ts_fifo_path[sizeof(config->ts_fifo_path)-1] = '\0';
                 ts_fifo_set=true;
                 break;
             case 'I':
-                strncpy(config->status_ip_addr,argv[param++], (16-1));
+                strncpy(config->status_ip_addr, argv[param++], (sizeof(config->status_ip_addr)-1));
+                config->status_ip_addr[sizeof(config->status_ip_addr)-1] = '\0';
                 config->status_ip_port=(uint16_t)strtol(argv[param],NULL,10);
                 config->status_use_ip=true;
                 status_ip_set = true;
                 break;
             case 's':
-                strncpy(config->status_fifo_path, argv[param], (128-1));
+                strncpy(config->status_fifo_path, argv[param], (sizeof(config->status_fifo_path)-1));
+                config->status_fifo_path[sizeof(config->status_fifo_path)-1] = '\0';
                 status_fifo_set=true;
                 break;
             case 'p':
-                strncpy(polarisation_str, argv[param], (8-1));
+                strncpy(polarisation_str, argv[param], (sizeof(polarisation_str)-1));
+                polarisation_str[sizeof(polarisation_str)-1] = '\0';
                 config->polarisation_supply=true;
                 break;
             case 'w':
