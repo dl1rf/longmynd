@@ -62,12 +62,12 @@ jobs:
             case "${{ matrix.distro }}" in
               buster)
                 apt-get update -q -y
-                apt-get install -q -y build-essential gcc-8 libusb-1.0-0-dev libasound2-dev
+                apt-get install -q -y build-essential gcc-7 gcc-8 libusb-1.0-0-dev libasound2-dev
                 apt-get install -q -y git cmake
                 ;;
               ubuntu20.04)
                 apt-get update -q -y
-                apt-get install -q -y build-essential gcc-9 gcc-10 gcc-11 libusb-1.0-0-dev libasound2-dev
+                apt-get install -q -y build-essential gcc-9 gcc-10 libusb-1.0-0-dev libasound2-dev
                 apt-get install -q -y git cmake
                 ;;
             esac
@@ -75,11 +75,11 @@ jobs:
           run: |
             case "${{ matrix.distro }}" in
               buster)
+                make clean && make werror CC=gcc-7
                 make clean && make werror CC=gcc-8
                 ;;
               ubuntu20.04)
                 make clean && make werror CC=gcc-9
                 make clean && make werror CC=gcc-10
-                make clean && make werror CC=gcc-11
                 ;;
             esac
