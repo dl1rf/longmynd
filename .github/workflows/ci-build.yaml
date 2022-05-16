@@ -45,7 +45,8 @@ jobs:
             distro: ubuntu20.04
 
     steps:
-      - uses: actions/checkout@v2.1.0
+      - uses: actions/checkout@v3
+        recursive: true
       - uses: uraimo/run-on-arch-action@v2.0.5
         name: Build Matrix
         id: build
