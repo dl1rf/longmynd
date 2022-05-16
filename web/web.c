@@ -355,6 +355,16 @@ static void web_status_json(char **status_string_ptr, longmynd_status_t *status,
 
     json_append_member(statusPacketRxObj, "pilot_symbols", json_mkbool(status_cache->pilots));
 
+
+    json_append_member(statusPacketRxObj, "ts_use_ip", json_mkbool(status_cache->ts_use_ip));
+    
+    json_append_member(statusPacketRxObj, "ts_fifo_path", json_mkstring(status_cache->ts_fifo_path));
+    
+    json_append_member(statusPacketRxObj, "ts_ip_addr", json_mkstring(status_cache->ts_ip_addr));
+    
+    json_append_member(statusPacketRxObj, "ts_ip_port", json_mknumber((double)(status_cache->ts_ip_port)));
+
+
     JsonNode *constellationArray = json_mkarray();
     JsonNode *constellationPoint;
     for(int j=0; j<NUM_CONSTELLATIONS; j++)

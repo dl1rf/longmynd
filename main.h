@@ -138,6 +138,11 @@ typedef struct {
     bool pilots;
     uint64_t last_ts_or_reinit_monotonic;
 
+    bool ts_use_ip;
+    char ts_fifo_path[128];
+    char ts_ip_addr[16];
+    int ts_ip_port;
+
     uint64_t last_updated_monotonic;
     pthread_mutex_t mutex;
     pthread_cond_t signal;

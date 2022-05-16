@@ -149,6 +149,8 @@ void *loop_ts(void *arg) {
         *err=ERROR_TS_BUFFER_MALLOC;
     }
 
+    pthread_mutex_lock(&config->mutex);
+
     if(config->ts_use_ip) {
         *err=udp_ts_init(config->ts_ip_addr, config->ts_ip_port);
         ts_write = udp_ts_write;
@@ -156,6 +158,16 @@ void *loop_ts(void *arg) {
         *err=fifo_ts_init(config->ts_fifo_path, &fifo_ready);
         ts_write = fifo_ts_write;
     }
+
+    pthread_mutex_lock(&status->mutex);
+
+    status->ts_use_ip = config->ts_use_ip;
+    strncpy(status->ts_ip_addr, config->ts_ip_addr, sizeof(status->ts_ip_addr));
+    status->ts_ip_port = config->ts_ip_port;
+    strncpy(status->ts_fifo_path, config->ts_fifo_path, sizeof(status->ts_fifo_path));
+
+    pthread_mutex_unlock(&status->mutex);
+    pthread_mutex_unlock(&config->mutex);
 
     while(*err == ERROR_NONE && *thread_vars->main_err_ptr == ERROR_NONE){
         /* If reset flag is active (eg. just started or changed station), then clear out the ts buffer */
@@ -182,7 +194,7 @@ void *loop_ts(void *arg) {
 
         *err=ftdi_usb_ts_read(buffer, &len, TS_FRAME_SIZE);
 
-        /* */
+        /* Check for new UDP TS output configuration */
         if((*err==ERROR_NONE) && (0 == pthread_mutex_trylock(&config->mutex))) {
             if(config->ts_config_new) {
                 /* For now we only handle UDP parameters changing, I don't know FIFO behaviour well enough */
@@ -192,6 +204,14 @@ void *loop_ts(void *arg) {
                 }
                 config->ts_config_new = false;
             }
+            pthread_mutex_lock(&status->mutex);
+
+            status->ts_use_ip = config->ts_use_ip;
+            strncpy(status->ts_ip_addr, config->ts_ip_addr, sizeof(status->ts_ip_addr));
+            status->ts_ip_port = config->ts_ip_port;
+            //strncpy(status->ts_fifo_path, config->ts_fifo_path, sizeof(status->ts_fifo_path));
+
+            pthread_mutex_unlock(&status->mutex);
             pthread_mutex_unlock(&config->mutex);
         }
 
