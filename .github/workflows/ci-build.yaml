@@ -16,7 +16,7 @@ jobs:
         # Install test matrix dependencies
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         sudo apt-get update -q -y
-        sudo apt-get install -q -y build-essential gcc-8 gcc-9 gcc-10 gcc-11
+        sudo apt-get install -q -y build-essential gcc-9 gcc-10 gcc-11
         # Install longmynd dependencies
         sudo apt-get install -q -y libusb-1.0-0-dev libasound2-dev
         # Install libwebsocket dependencies
@@ -24,7 +24,6 @@ jobs:
     - name: Build longmynd
       shell: bash
       run: |
-        make clean && make werror CC=gcc-8
         make clean && make werror CC=gcc-9
         make clean && make werror CC=gcc-10
         make clean && make werror CC=gcc-11
