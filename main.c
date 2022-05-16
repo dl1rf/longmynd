@@ -786,6 +786,7 @@ void *loop_i2c(void *arg) {
         pthread_mutex_lock(&status->mutex);
 
         /* Copy out other vars */
+        status->rfport_index = status_cpy.rfport_index;
         status->state = status_cpy.state;
         status->demod_state = status_cpy.demod_state;
         status->lna_ok = status_cpy.lna_ok;
