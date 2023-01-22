@@ -273,9 +273,7 @@ static struct lws_protocols protocols[] = {
         .per_session_data_size = 128,
         .rx_buffer_size = 4096,
     },
-    {
-        0 /* terminator, .id = 0 */
-    }
+    LWS_PROTOCOL_LIST_TERM
 };
 
 /* default mount serves the URL space from ./mount-origin */
@@ -298,7 +296,6 @@ static const struct lws_http_mount mount_opts = {
     /* .origin_protocol */      LWSMPRO_FILE,   /* files in a dir */
     /* .mountpoint_len */       1,      /* char count */
     /* .basic_auth_login_file */    NULL,
-    /* __dummy */ { 0 },
 };
 
 static void web_status_json(char **status_string_ptr, longmynd_status_t *status, longmynd_status_t *status_cache)
