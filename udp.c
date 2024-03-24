@@ -168,6 +168,12 @@ static uint8_t udp_init(struct sockaddr_in *servaddr_ptr, int *sockfd_ptr, char 
         servaddr_ptr->sin_family = AF_INET; 
         servaddr_ptr->sin_port = htons(udp_port); 
         servaddr_ptr->sin_addr.s_addr = inet_addr(udp_ip); // INADDR_ANY; 
+
+        if((inet_addr(udp_ip) & 0xFF) == 0xFF)
+        {
+            uint32_t on = 1;
+            setsockopt(*sockfd_ptr, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on));
+        }
     }
     if (err!=ERROR_NONE) printf("ERROR: UDP init\n");
 
