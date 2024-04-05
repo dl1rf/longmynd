@@ -318,6 +318,12 @@ static void web_status_json(char **status_string_ptr, longmynd_status_t *status,
 
     json_object_object_add(statusPacketRxObj, "demod_state", json_object_new_double((double)status_cache->state));
 
+    json_object_object_add(statusPacketRxObj, "lna", json_object_new_double((double)status_cache->lna_gain));
+
+    json_object_object_add(statusPacketRxObj, "agc1", json_object_new_double((double)status_cache->agc1_gain));
+
+    json_object_object_add(statusPacketRxObj, "agc2", json_object_new_double((double)status_cache->agc2_gain));
+
     json_object_object_add(statusPacketRxObj, "frequency", json_object_new_double((double)(status_cache->frequency_requested+(status->frequency_offset/1000))));
 
     json_object_object_add(statusPacketRxObj, "lnb_voltage_enabled", json_object_new_boolean(status_cache->polarisation_supply));
