@@ -1,7 +1,7 @@
 # Makefile for longmynd
 
 SRC = main.c nim.c ftdi.c stv0910.c stv0910_utils.c stvvglna.c stvvglna_utils.c stv6120.c stv6120_utils.c ftdi_usb.c fifo.c udp.c beep.c ts.c libts.c
-SRC += web/web.c web/json.c
+SRC += web/web.c
 OBJ = ${SRC:.c=.o}
 DEP := ${SRC:.c=.d}
 
@@ -14,7 +14,7 @@ endif
 
 COPT = -O3 -march=native -mtune=native
 CFLAGS += -Wall -Wextra -Wpedantic -Wunused -DVERSION=\"${VER}\" -pthread -D_GNU_SOURCE
-LDFLAGS += -lusb-1.0 -lm -lasound
+LDFLAGS += -lusb-1.0 -lm -lasound -ljson-c
 LDFLAGS += -Wl,-Bstatic -lwebsockets -Wl,-Bdynamic
 
 LWS_DIR = ./web/libwebsockets/

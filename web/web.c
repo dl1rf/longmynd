@@ -2,8 +2,8 @@
 #include "../errors.h"
 
 #include "web.h"
-#include "json.h"
 
+#include <json-c/json.h>
 #include <libwebsockets.h>
 #include <stdio.h> // Debug
 #include <errno.h> // sleep_ms - EINTR
@@ -300,114 +300,106 @@ static const struct lws_http_mount mount_opts = {
 
 static void web_status_json(char **status_string_ptr, longmynd_status_t *status, longmynd_status_t *status_cache)
 {
-    JsonNode *statusObj;
-    JsonNode *statusPacketObj;
-    JsonNode *statusPacketRxObj;
-    JsonNode *statusPacketTsObj;
+    json_object *statusObj = json_object_new_object();
+    json_object *statusPacketObj = json_object_new_object();
+    json_object *statusPacketRxObj = json_object_new_object();
+    json_object *statusPacketTsObj = json_object_new_object();
 
     pthread_mutex_lock(&status->mutex);
     memcpy(status_cache, status, sizeof(longmynd_status_t));
     pthread_mutex_unlock(&status->mutex);
 
-    statusObj = json_mkobject();
-
-    json_append_member(statusObj, "type", json_mkstring("status"));
-    json_append_member(statusObj, "timestamp", json_mknumber(((double)timestamp_ms())/1000));
-
-    statusPacketObj = json_mkobject();
+    json_object_object_add(statusObj, "type", json_object_new_string("status"));
+    json_object_object_add(statusObj, "timestamp", json_object_new_double(((double)timestamp_ms())/1000));
 
     /* Receiver */
 
-    statusPacketRxObj = json_mkobject();
+    json_object_object_add(statusPacketRxObj, "rfport", json_object_new_double((double)status_cache->rfport_index));
 
-    json_append_member(statusPacketRxObj, "rfport", json_mknumber((double)status_cache->rfport_index));
+    json_object_object_add(statusPacketRxObj, "demod_state", json_object_new_double((double)status_cache->state));
 
-    json_append_member(statusPacketRxObj, "demod_state", json_mknumber((double)status_cache->state));
+    json_object_object_add(statusPacketRxObj, "frequency", json_object_new_double((double)(status_cache->frequency_requested+(status->frequency_offset/1000))));
 
-    json_append_member(statusPacketRxObj, "frequency", json_mknumber((double)(status_cache->frequency_requested+(status->frequency_offset/1000))));
+    json_object_object_add(statusPacketRxObj, "lnb_voltage_enabled", json_object_new_boolean(status_cache->polarisation_supply));
 
-    json_append_member(statusPacketRxObj, "lnb_voltage_enabled", json_mkbool(status_cache->polarisation_supply));
+    json_object_object_add(statusPacketRxObj, "lnb_voltage_polarisation_h", json_object_new_boolean(status_cache->polarisation_horizontal));
 
-    json_append_member(statusPacketRxObj, "lnb_voltage_polarisation_h", json_mkbool(status_cache->polarisation_horizontal));
+    json_object_object_add(statusPacketRxObj, "symbolrate", json_object_new_double((double)status_cache->symbolrate));
 
-    json_append_member(statusPacketRxObj, "symbolrate", json_mknumber((double)status_cache->symbolrate));
+    json_object_object_add(statusPacketRxObj, "vber", json_object_new_double((double)status_cache->viterbi_error_rate));
 
-    json_append_member(statusPacketRxObj, "vber", json_mknumber((double)status_cache->viterbi_error_rate));
+    json_object_object_add(statusPacketRxObj, "ber", json_object_new_double((double)status_cache->bit_error_rate));
 
-    json_append_member(statusPacketRxObj, "ber", json_mknumber((double)status_cache->bit_error_rate));
+    json_object_object_add(statusPacketRxObj, "errors_bch_uncorrected", json_object_new_double((double)status_cache->errors_bch_uncorrected));
 
-    json_append_member(statusPacketRxObj, "errors_bch_uncorrected", json_mkbool(status_cache->errors_bch_uncorrected));
+    json_object_object_add(statusPacketRxObj, "errors_bch_count", json_object_new_double((double)status_cache->errors_bch_count));
 
-    json_append_member(statusPacketRxObj, "errors_bch_count", json_mknumber((double)status_cache->errors_bch_count));
+    json_object_object_add(statusPacketRxObj, "errors_ldpc_count", json_object_new_double((double)status_cache->errors_ldpc_count));
 
-    json_append_member(statusPacketRxObj, "errors_ldpc_count", json_mknumber((double)status_cache->errors_ldpc_count));
+    json_object_object_add(statusPacketRxObj, "ber", json_object_new_double((double)status_cache->bit_error_rate));
 
-    json_append_member(statusPacketRxObj, "ber", json_mknumber((double)status_cache->bit_error_rate));
+    json_object_object_add(statusPacketRxObj, "mer", json_object_new_double((double)status_cache->modulation_error_rate));
 
-    json_append_member(statusPacketRxObj, "mer", json_mknumber((double)status_cache->modulation_error_rate));
+    json_object_object_add(statusPacketRxObj, "modcod", json_object_new_double((double)status_cache->modcod));
 
-    json_append_member(statusPacketRxObj, "modcod", json_mknumber((double)(status_cache->modcod)));
+    json_object_object_add(statusPacketRxObj, "short_frame", json_object_new_boolean(status_cache->short_frame));
 
-    json_append_member(statusPacketRxObj, "short_frame", json_mkbool(status_cache->short_frame));
-
-    json_append_member(statusPacketRxObj, "pilot_symbols", json_mkbool(status_cache->pilots));
+    json_object_object_add(statusPacketRxObj, "pilot_symbols", json_object_new_boolean(status_cache->pilots));
 
 
-    json_append_member(statusPacketRxObj, "ts_use_ip", json_mkbool(status_cache->ts_use_ip));
+    json_object_object_add(statusPacketRxObj, "ts_use_ip", json_object_new_boolean(status_cache->ts_use_ip));
     
-    json_append_member(statusPacketRxObj, "ts_fifo_path", json_mkstring(status_cache->ts_fifo_path));
+    json_object_object_add(statusPacketRxObj, "ts_fifo_path", json_object_new_string(status_cache->ts_fifo_path));
     
-    json_append_member(statusPacketRxObj, "ts_ip_addr", json_mkstring(status_cache->ts_ip_addr));
+    json_object_object_add(statusPacketRxObj, "ts_ip_addr", json_object_new_string(status_cache->ts_ip_addr));
     
-    json_append_member(statusPacketRxObj, "ts_ip_port", json_mknumber((double)(status_cache->ts_ip_port)));
+    json_object_object_add(statusPacketRxObj, "ts_ip_port", json_object_new_double((double)(status_cache->ts_ip_port)));
 
 
-    JsonNode *constellationArray = json_mkarray();
-    JsonNode *constellationPoint;
+    json_object *constellationArray = json_object_new_array();
+    json_object *constellationPoint;
     for(int j=0; j<NUM_CONSTELLATIONS; j++)
     {
         /* Create point [x,y] */
-        constellationPoint = json_mkarray();
-        json_append_element(constellationPoint, json_mknumber(status_cache->constellation[j][0]));
-        json_append_element(constellationPoint, json_mknumber(status_cache->constellation[j][1]));
+        constellationPoint = json_object_new_array();
+        json_object_array_add(constellationPoint, json_object_new_double(status_cache->constellation[j][0]));
+        json_object_array_add(constellationPoint, json_object_new_double(status_cache->constellation[j][1]));
         /* Add to array [[x,y],[x,y]] */
-        json_append_element(constellationArray, constellationPoint);
+        json_object_array_add(constellationArray, constellationPoint);
     }
-    json_append_member(statusPacketRxObj, "constellation", constellationArray);
+    json_object_object_add(statusPacketRxObj, "constellation", constellationArray);
 
-    json_append_member(statusPacketObj, "rx", statusPacketRxObj);
+    json_object_object_add(statusPacketObj, "rx", statusPacketRxObj);
 
     /* Transport Stream */
 
-    statusPacketTsObj = json_mkobject();
+    json_object_object_add(statusPacketTsObj, "service_name", json_object_new_string(status_cache->service_name));
 
-    json_append_member(statusPacketTsObj, "service_name", json_mkstring(status_cache->service_name));
+    json_object_object_add(statusPacketTsObj, "service_provider_name", json_object_new_string(status_cache->service_provider_name));
 
-    json_append_member(statusPacketTsObj, "service_provider_name", json_mkstring(status_cache->service_provider_name));
+    json_object_object_add(statusPacketTsObj, "null_ratio", json_object_new_double((double)status_cache->ts_null_percentage));
 
-    json_append_member(statusPacketTsObj, "null_ratio", json_mknumber((double)status_cache->ts_null_percentage));
-
-    JsonNode *elementaryPIDsArray = json_mkarray();
-    JsonNode *elementaryPID;
+    json_object *elementaryPIDsArray = json_object_new_array();
+    json_object *elementaryPID;
     for (int j=0; j<NUM_ELEMENT_STREAMS; j++) {
         if(status_cache->ts_elementary_streams[j][0] > 0)
         {
-            elementaryPID = json_mkarray();
-            json_append_element(elementaryPID, json_mknumber(status_cache->ts_elementary_streams[j][0]));
-            json_append_element(elementaryPID, json_mknumber(status_cache->ts_elementary_streams[j][1]));
+            elementaryPID = json_object_new_array();
+            json_object_array_add(elementaryPID, json_object_new_double(status_cache->ts_elementary_streams[j][0]));
+            json_object_array_add(elementaryPID, json_object_new_double(status_cache->ts_elementary_streams[j][1]));
             /* Add to array [[x,y],[x,y]] */
-            json_append_element(elementaryPIDsArray, elementaryPID);
+            json_object_array_add(elementaryPIDsArray, elementaryPID);
         }
     }
-    json_append_member(statusPacketTsObj, "PIDs", elementaryPIDsArray);
+    json_object_object_add(statusPacketTsObj, "PIDs", elementaryPIDsArray);
 
-    json_append_member(statusPacketObj, "ts", statusPacketTsObj);
+    json_object_object_add(statusPacketObj, "ts", statusPacketTsObj);
 
-    json_append_member(statusObj, "packet", statusPacketObj);
+    json_object_object_add(statusObj, "packet", statusPacketObj);
 
-    *status_string_ptr = json_stringify(statusObj, NULL);
+    *status_string_ptr = (char *)json_object_to_json_string(statusObj);
 
-    json_delete(statusObj);
+    json_object_put(statusObj);
 }
 
 /* Websocket Service Thread */
